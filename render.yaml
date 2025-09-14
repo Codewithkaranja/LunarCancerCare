@@ -1,0 +1,16 @@
+services:
+  - type: web
+    name: hmis-backend
+    env: node
+    plan: free
+    region: oregon
+    branch: main
+    buildCommand: "npm install"
+    startCommand: "node server.js"
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: MONGO_URI
+        sync: false # 👉 uta-add manually kwa Render dashboard
+      - key: JWT_SECRET
+        sync: false # 👉 uta-add manually pia

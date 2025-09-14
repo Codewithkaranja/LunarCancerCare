@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HMIS Full Dashboard</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <!-- Login Form -->
+    <form id="loginForm">
+      <h2>Login to HMIS</h2>
+      <input type="text" id="username" placeholder="Username" required />
+      <input type="password" id="password" placeholder="Password" required />
+      <button type="submit">Login</button>
+    </form>
+
+    <!-- Dashboard Container -->
+    <div class="container hidden" id="dashboardContainer">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <h2><span>HMIS</span></h2>
+        <nav>
+          <a href="#" onclick="showSection('dashboard')"
+            ><i class="fa fa-chart-line"></i> <span>Dashboard</span></a
+          >
+          <a href="#" onclick="showSection('patients')"
+            ><i class="fa fa-user-injured"></i> <span>Patients</span></a
+          >
+          <a href="#" onclick="showSection('appointments')"
+            ><i class="fa fa-calendar-check"></i> <span>Appointments</span></a
+          >
+          <a href="#" onclick="showSection('staff')"
+            ><i class="fa fa-user-md"></i> <span>Staff</span></a
+          >
+          <a href="#" onclick="showSection('inventory')"
+            ><i class="fa fa-pills"></i> <span>Inventory</span></a
+          >
+          <a href="#" onclick="showSection('reports')"
+            ><i class="fa fa-file-alt"></i> <span>Reports</span></a
+          >
+        </nav>
+      </div>
+
+      <!-- Main -->
+      <div class="main">
+        <div class="header">
+          <h1>Dashboard</h1>
+          <div class="user">
+            <img src="https://i.pravatar.cc/40" alt="User" />
+            <span id="adminName">Admin</span>
+          </div>
+        </div>
+
+        <!-- Sections -->
+        <div id="dashboardSection">
+          <div class="cards">
+            <div class="card">
+              <div>
+                <h3>Total Patients</h3>
+                <p id="totalPatients">0</p>
+              </div>
+              <i class="fa fa-user-injured"></i>
+            </div>
+            <div class="card">
+              <div>
+                <h3>Appointments Today</h3>
+                <p id="appointmentsToday">0</p>
+              </div>
+              <i class="fa fa-calendar-check"></i>
+            </div>
+            <div class="card">
+              <div>
+                <h3>Staff Members</h3>
+                <p id="staffCount">0</p>
+              </div>
+              <i class="fa fa-user-md"></i>
+            </div>
+            <div class="card">
+              <div>
+                <h3>Reports</h3>
+                <p id="reportsCount">0</p>
+              </div>
+              <i class="fa fa-file-alt"></i>
+            </div>
+          </div>
+          <div class="charts">
+            <div class="chart-container">
+              <h3>Patient Age Distribution</h3>
+              <canvas id="ageChart"></canvas>
+            </div>
+            <div class="chart-container">
+              <h3>Appointments Trend</h3>
+              <canvas id="appointmentsChart"></canvas>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================== PATIENTS SECTION ================== -->
+        <div id="patientsSection" class="hidden">
+          <!-- Dashboard Summary -->
+          <div class="dashboard-summary">
+            <div class="card">
+              <h3>Total Patients</h3>
+              <p id="totalPatients">0</p>
+            </div>
+          </div>
+
+          <!-- Add Patient Form -->
+          <div class="form-container">
+            <h2>Add Patient</h2>
+            <div class="form-grid">
+              <div class="input-group">
+                <label for="pName">Name</label>
+                <input type="text" id="pName" placeholder="Patient Name" />
+              </div>
+              <div class="input-group">
+                <label for="pAge">Age</label>
+                <input type="number" id="pAge" placeholder="Age" />
+              </div>
+              <div class="input-group">
+                <label for="pGender">Gender</label>
+                <select name="gender" id="pGender">
+                  <option value="">Gender</option>
+                  <option value="Male">Male</option>
+                  <option value="Female">Female</option>
+                  <option value="Rather Not Say">Rather Not Say</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label for="pEmail">Email</label>
+                <input type="email" id="pEmail" placeholder="Email" />
+              </div>
+              <div class="input-group">
+                <label for="pPhone">Phone</label>
+                <input type="tel" id="pPhone" placeholder="Phone Number" />
+              </div>
+              <div class="input-group">
+                <label for="pNationalId">National ID</label>
+                <input
+                  type="number"
+                  id="pNationalId"
+                  placeholder="National ID"
+                />
+              </div>
+              <div class="input-group">
+                <label for="pAilment">Ailment</label>
+                <input type="text" id="pAilment" placeholder="Ailment" />
+              </div>
+            </div>
+            <button onclick="addPatient()">Add Patient</button>
+          </div>
+
+          <!-- Search / Filter -->
+          <div class="search-container">
+            <input
+              type="text"
+              id="searchPatient"
+              placeholder="Search by name, phone, or ailment..."
+              onkeyup="filterPatients()"
+            />
+          </div>
+
+          <!-- Patients Table -->
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Age</th>
+                  <th>Ailment</th>
+                  <th>Date Admitted</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="patientsTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ================== PATIENT MODAL ================== -->
+        <div id="patientModal" class="modal hidden">
+          <div class="modal-content">
+            <span class="close" onclick="closePatientModal()">&times;</span>
+            <h3>Patient Details</h3>
+            <p><strong>Name:</strong> <span id="modalName"></span></p>
+            <p><strong>Age:</strong> <span id="modalAge"></span></p>
+            <p><strong>Gender:</strong> <span id="modalGender"></span></p>
+            <p><strong>Email:</strong> <span id="modalEmail"></span></p>
+            <p><strong>Phone:</strong> <span id="modalPhone"></span></p>
+            <p>
+              <strong>National ID:</strong> <span id="modalNationalId"></span>
+            </p>
+            <p><strong>Ailment:</strong> <span id="modalAilment"></span></p>
+            <p>
+              <strong>Date Admitted:</strong>
+              <span id="modalDateAdmitted"></span>
+            </p>
+            <hr />
+
+            <h4>History & Previous Data</h4>
+            <div>
+              <h5>Appointments</h5>
+              <div id="modalPrevAppointments"></div>
+            </div>
+            <div>
+              <h5>Bills</h5>
+              <div id="modalBills"></div>
+            </div>
+            <div>
+              <h5>Prescriptions</h5>
+              <div id="modalPrescriptions"></div>
+            </div>
+
+            <div class="modal-actions" style="margin-top: 15px">
+              <button class="btn small print-history">🖨 Print History</button>
+              <button class="btn small export-bills">
+                ⬇ Export Bills (CSV)
+              </button>
+              <button class="btn small schedule-appt">
+                📅 Schedule Appointment
+              </button>
+              <button class="btn small" onclick="closePatientModal()">
+                Close
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- ================== SCHEDULE APPOINTMENT MODAL ================== -->
+        <div id="scheduleApptModal" class="modal hidden">
+          <div class="modal-content">
+            <span
+              class="close"
+              onclick="document.getElementById('scheduleApptModal').classList.add('hidden')"
+              >&times;</span
+            >
+            <h3>Schedule Appointment</h3>
+            <input type="datetime-local" id="apptDate" />
+            <input type="text" id="apptReason" placeholder="Reason" />
+            <button onclick="submitAppointment()">Save Appointment</button>
+          </div>
+        </div>
+
+        <!-- ====================== Appointments Dashboard ====================== -->
+        <div id="appointmentsSection">
+          <!-- Header + Controls -->
+          <div class="dashboard-header">
+            <h2>Appointments Dashboard</h2>
+            <div class="controls">
+              <input
+                type="text"
+                id="appointmentSearch"
+                placeholder="Search by patient, staff, or date"
+              />
+              <button class="primary-btn" onclick="openModal()">
+                Add Appointment
+              </button>
+            </div>
+          </div>
+
+          <!-- Appointments Table -->
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Patient</th>
+                  <th>Staff</th>
+                  <th>Reason</th>
+                  <th>Date</th>
+                  <th>Time</th>
+                  <th>Notes</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="appointmentsTable">
+                <!-- JS will populate rows dynamically -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Chart Section -->
+          <div class="appointments-stats">
+            <h3>Appointments Statistics</h3>
+            <canvas id="appointmentsChart"></canvas>
+          </div>
+
+          <!-- Modal: Add/Edit Appointment -->
+          <div id="appointmentModal" class="modal hidden">
+            <div class="modal-content">
+              <span class="close" onclick="closeModal()">&times;</span>
+              <h2 id="modalTitle">Add Appointment</h2>
+              <form id="appointmentForm">
+                <div class="form-grid">
+                  <!-- Patient Dropdown -->
+                  <div class="input-group">
+                    <label for="aPatient">Select Patient</label>
+                    <select id="aPatient" required>
+                      <option value="">-- Select Patient --</option>
+                      <!-- JS will populate options dynamically -->
+                    </select>
+                  </div>
+
+                  <!-- Staff Dropdown -->
+                  <div class="input-group">
+                    <label for="aStaff">Select Staff</label>
+                    <select id="aStaff" required>
+                      <option value="">-- Select Staff --</option>
+                      <!-- JS will populate options dynamically -->
+                    </select>
+                  </div>
+
+                  <div class="input-group">
+                    <label for="aReason">Reason</label>
+                    <input
+                      type="text"
+                      id="aReason"
+                      placeholder="Reason"
+                      required
+                    />
+                  </div>
+
+                  <div class="input-group">
+                    <label for="aNotes">Notes</label>
+                    <textarea
+                      id="aNotes"
+                      placeholder="Write your notes here"
+                    ></textarea>
+                  </div>
+
+                  <div class="input-group">
+                    <label for="aDate">Date</label>
+                    <input type="date" id="aDate" required />
+                  </div>
+
+                  <div class="input-group">
+                    <label for="aTime">Time</label>
+                    <input type="time" id="aTime" required />
+                  </div>
+                </div>
+                <button type="submit" class="primary-btn">
+                  Save Appointment
+                </button>
+              </form>
+            </div>
+          </div>
+        </div>
+
+        <!-- ====================== End Appointments Dashboard ====================== -->
+
+        <!-- Staff Section -->
+
+        <div id="staffSection" class="hidden">
+          <!-- Add Staff Form -->
+          <div class="form-container">
+            <h2>Add Staff</h2>
+            <div class="form-grid">
+              <div class="input-group">
+                <label for="sName">Name</label>
+                <input type="text" id="sName" placeholder="Staff Name" />
+              </div>
+              <div class="input-group">
+                <label for="sRole">Role</label>
+                <select id="sRole">
+                  <option value="">Select Role</option>
+                  <option value="Doctor">Doctor</option>
+                  <option value="Nurse">Nurse</option>
+                  <option value="Pharmacist">Pharmacist</option>
+                  <option value="Receptionist">Receptionist</option>
+                  <option value="Admin">Admin</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label for="sDepartment">Department</label>
+                <input type="text" id="sDepartment" placeholder="Department" />
+              </div>
+              <div class="input-group">
+                <label for="sEmail">Email</label>
+                <input type="email" id="sEmail" placeholder="Email" />
+              </div>
+              <div class="input-group">
+                <label for="sPhone">Phone</label>
+                <input type="tel" id="sPhone" placeholder="Phone" />
+              </div>
+              <div class="input-group">
+                <label for="sQualifications">Qualifications</label>
+                <input
+                  type="text"
+                  id="sQualifications"
+                  placeholder="Qualifications"
+                />
+              </div>
+              <div class="input-group">
+                <label for="sHiredDate">Hired Date</label>
+                <input type="date" id="sHiredDate" />
+              </div>
+              <div class="input-group">
+                <label for="sShift">Shift Status</label>
+                <select id="sShift">
+                  <option value="On Duty">On Duty</option>
+                  <option value="Off Duty">Off Duty</option>
+                  <option value="Leave">Leave</option>
+                </select>
+              </div>
+              <div class="input-group">
+                <label for="sUsername">Username</label>
+                <input
+                  type="text"
+                  id="sUsername"
+                  placeholder="Username"
+                  required
+                />
+              </div>
+              <div class="input-group">
+                <label for="sPassword">Password</label>
+                <input
+                  type="password"
+                  id="sPassword"
+                  placeholder="Password"
+                  required
+                />
+              </div>
+            </div>
+            <button onclick="addStaff()">Add Staff</button>
+          </div>
+
+          <!-- Search / Filter -->
+          <div class="search-container">
+            <input
+              type="text"
+              id="searchStaff"
+              placeholder="Search staff by name, role, or department..."
+              onkeyup="filterStaff()"
+            />
+            <button onclick="exportStaffCSV()">Export CSV</button>
+            <button onclick="printStaffList()">Print</button>
+          </div>
+
+          <!-- Staff Table -->
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Name</th>
+                  <th>Role</th>
+                  <th>Department</th>
+                  <th>Email</th>
+                  <th>Phone</th>
+                  <th>Qualifications</th>
+                  <th>Hired Date</th>
+                  <th>Shift</th>
+                  <th>Username</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="staffTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- Staff Modal -->
+        <div id="staffModal" class="modal hidden">
+          <div class="modal-content">
+            <span class="close" onclick="closeStaffModal()">&times;</span>
+            <h3>Staff Details</h3>
+            <p><strong>Name:</strong> <span id="modalStaffName"></span></p>
+            <p><strong>Role:</strong> <span id="modalStaffRole"></span></p>
+            <p>
+              <strong>Department:</strong>
+              <span id="modalStaffDepartment"></span>
+            </p>
+            <p><strong>Email:</strong> <span id="modalStaffEmail"></span></p>
+            <p><strong>Phone:</strong> <span id="modalStaffPhone"></span></p>
+            <p>
+              <strong>Qualifications:</strong>
+              <span id="modalStaffQualifications"></span>
+            </p>
+            <p>
+              <strong>Hired Date:</strong>
+              <span id="modalStaffHiredDate"></span>
+            </p>
+            <p><strong>Shift:</strong> <span id="modalStaffShift"></span></p>
+            <hr />
+            <h4>Workload & Assignments</h4>
+            <p>
+              <strong>Patients Attended:</strong>
+              <span id="modalStaffPatients"></span>
+            </p>
+            <p>
+              <strong>Appointments:</strong>
+              <span id="modalStaffAppointments"></span>
+            </p>
+            <button onclick="assignStaff()">Assign Patient</button>
+            <button onclick="printStaffProfile()">Print / Download</button>
+          </div>
+        </div>
+
+        <!-- Administer medicine -->
+        <section class="administer-medicine">
+          <h3>Administer Medicine</h3>
+          <div>
+            <label>Patient Name:</label>
+            <input type="text" id="patientName" />
+          </div>
+          <div>
+            <label>Medicine:</label>
+            <select id="medicineSelect">
+              <!-- Options populated dynamically -->
+            </select>
+          </div>
+          <div>
+            <label>Quantity:</label>
+            <input type="number" id="quantityUsed" />
+          </div>
+          <button onclick="administerMedicine()">Administer</button>
+        </section>
+
+        <!-- Inventory Section -->
+        <div id="inventorySection" class="hidden">
+          <div class="form-container">
+            <h2>Medicine Inventory</h2>
+            <div class="form-grid">
+              <div class="input-group">
+                <label for="medName">Name</label>
+                <input type="text" id="medName" placeholder="Medicine name" />
+              </div>
+              <div class="input-group">
+                <label for="medBatch">Batch No.</label>
+                <input type="text" id="medBatch" placeholder="Batch number" />
+              </div>
+              <div class="input-group">
+                <label for="medQuantity">Quantity</label>
+                <input type="number" id="medQuantity" placeholder="Quantity" />
+              </div>
+              <div class="input-group">
+                <label for="medUnit">Unit</label>
+                <input type="text" id="medUnit" placeholder="e.g. tablets" />
+              </div>
+              <div class="input-group">
+                <label for="medPrice">Price per unit</label>
+                <input type="number" id="medPrice" placeholder="Price" />
+              </div>
+              <div class="input-group">
+                <label for="medExpiry">Expiry Date</label>
+                <input type="date" id="medExpiry" />
+              </div>
+            </div>
+            <button onclick="addOrUpdateMedicine()">
+              Add / Update Medicine
+            </button>
+          </div>
+
+          <!-- Search & Sort Controls -->
+          <div class="table-controls">
+            <input
+              type="text"
+              id="inventorySearch"
+              placeholder="Search by name, batch or unit"
+            />
+            <div class="sort-buttons">
+              <label>Sort by:</label>
+              <button onclick="sortInventory('name')">Name</button>
+              <button onclick="sortInventory('quantity')">Qty</button>
+              <button onclick="sortInventory('expiryDate')">Expiry</button>
+            </div>
+          </div>
+
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>Batch</th>
+                  <th>Qty</th>
+                  <th>Unit</th>
+                  <th>Price</th>
+                  <th>Expiry</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="inventoryTableBody"></tbody>
+            </table>
+          </div>
+
+          <!-- Stock Chart Section -->
+          <div class="chart-container">
+            <canvas id="stockChart"></canvas>
+          </div>
+        </div>
+
+        <!-- Reports Section -->
+        <div id="reportsSection" class="hidden">
+          <div class="form-container">
+            <h2>Reports & Statistics</h2>
+            <p>Here you can see aggregated reports and charts.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>&copy;2025 Lunar Cancer Care. All Rights Reserved</p>
+      <p>
+        Software crafted with <span style="color: red">&#10084;</span> by
+        <a href="tel:+254723562484"> SarahDevs</a>
+      </p>
+    </div>
+    <script src="script.js"></script>
+  </body>
+</html>

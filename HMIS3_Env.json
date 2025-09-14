@@ -1,0 +1,23 @@
+{
+  "client": "Thunder Client",
+  "environmentName": "HMIS3 Environment",
+  "dateExported": "2025-09-03",
+  "variables": [
+    {
+      "name": "baseUrl",
+      "value": "http://localhost:5000/api"
+    },
+    {
+      "name": "patientId",
+      "value": ""
+    },
+    {
+      "name": "staffId",
+      "value": ""
+    },
+    {
+      "name": "appointmentId",
+      "value": ""
+    }
+  ]
+}
