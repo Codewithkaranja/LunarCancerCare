@@ -50,7 +50,6 @@ router.post(
     try {
       const { patientId, testName, result, unit, referenceRange, performedBy } = req.body;
 
-      // Log incoming data
       console.log("POST /lab-tests body:", req.body);
       console.log("Logged-in user:", req.user);
 
@@ -93,19 +92,20 @@ router.post(
 
       const savedLabTest = await labTest.save();
 
-      // Add labTest to patient's array
+      // Add labTest to patient's array WITHOUT triggering full validation
       patient.labTests = patient.labTests || [];
       patient.labTests.push(savedLabTest._id);
-      await patient.save();
+      await patient.save({ validateBeforeSave: false });
 
-      const populatedLabTest = await LabTest.findById(savedLabTest._id).populate("patientId", "name patientCode");
+      const populatedLabTest = await LabTest.findById(savedLabTest._id)
+        .populate("patientId", "name patientCode");
 
       res.status(201).json(populatedLabTest);
     } catch (err) {
       console.error("Error adding lab test:", err.message, err.stack);
       res.status(500).json({
         error: "Internal server error",
-        details: err.message, // optional: give more info for debugging
+        details: err.message,
       });
     }
   }
@@ -150,7 +150,7 @@ router.delete(
       const patient = await Patient.findById(labTest.patientId);
       if (patient) {
         patient.labTests = patient.labTests.filter(id => id.toString() !== labTest._id.toString());
-        await patient.save();
+        await patient.save({ validateBeforeSave: false });
       }
 
       res.json({ message: "Lab test deleted successfully" });
