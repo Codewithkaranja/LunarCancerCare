@@ -21,14 +21,57 @@ router.get(
           medicineCode: m.medicineCode,
           name: m.name,
           manufacturer: m.manufacturer || "",
+          batch: m.batch,
+          description: m.description,
+          category: m.category,
           quantity: m.quantity,
+          unit: m.unit,
           price: m.price,
+          expiryDate: m.expiryDate,
+          reorderLevel: m.reorderLevel,
+          status: m.status,
           createdAt: m.createdAt,
           updatedAt: m.updatedAt,
         }))
       );
     } catch (err) {
       console.error("Error fetching medicines:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ================== GET single medicine by ID ==================
+router.get(
+  "/:id",
+  authMiddleware,
+  roleMiddleware([ROLES.ADMIN, ROLES.PHARMACIST]),
+  async (req, res) => {
+    try {
+      const medicine = await Medicine.findById(req.params.id);
+      if (!medicine) {
+        return res.status(404).json({ error: "Medicine not found" });
+      }
+
+      res.json({
+        id: medicine._id,
+        medicineCode: medicine.medicineCode,
+        name: medicine.name,
+        manufacturer: medicine.manufacturer || "",
+        batch: medicine.batch,
+        description: medicine.description,
+        category: medicine.category,
+        quantity: medicine.quantity,
+        unit: medicine.unit,
+        price: medicine.price,
+        expiryDate: medicine.expiryDate,
+        reorderLevel: medicine.reorderLevel,
+        status: medicine.status,
+        createdAt: medicine.createdAt,
+        updatedAt: medicine.updatedAt,
+      });
+    } catch (err) {
+      console.error("Error fetching medicine by ID:", err);
       res.status(500).json({ error: "Internal server error" });
     }
   }
@@ -41,7 +84,7 @@ router.post(
   roleMiddleware([ROLES.ADMIN, ROLES.PHARMACIST]),
   async (req, res) => {
     try {
-      const { name, manufacturer, quantity, price } = req.body;
+      const { name, manufacturer, quantity, price, batch, description, category, unit, expiryDate, reorderLevel } = req.body;
 
       if (!name || quantity == null || price == null) {
         return res
@@ -57,6 +100,12 @@ router.post(
       const medicine = new Medicine({
         name: name.trim(),
         manufacturer: manufacturer || "",
+        batch: batch || "",
+        description: description || "",
+        category: category || "General",
+        unit: unit || "pcs",
+        expiryDate: expiryDate || null,
+        reorderLevel: reorderLevel || 0,
         quantity,
         price,
         medicineCode,
@@ -69,8 +118,15 @@ router.post(
         medicineCode: saved.medicineCode,
         name: saved.name,
         manufacturer: saved.manufacturer,
+        batch: saved.batch,
+        description: saved.description,
+        category: saved.category,
         quantity: saved.quantity,
+        unit: saved.unit,
         price: saved.price,
+        expiryDate: saved.expiryDate,
+        reorderLevel: saved.reorderLevel,
+        status: saved.status,
         createdAt: saved.createdAt,
         updatedAt: saved.updatedAt,
       });
@@ -88,7 +144,7 @@ router.put(
   roleMiddleware([ROLES.ADMIN, ROLES.PHARMACIST]),
   async (req, res) => {
     try {
-      const { name, manufacturer, quantity, price } = req.body;
+      const { name, manufacturer, quantity, price, batch, description, category, unit, expiryDate, reorderLevel } = req.body;
 
       if (!name || quantity == null || price == null) {
         return res
@@ -101,6 +157,12 @@ router.put(
         {
           name: name.trim(),
           manufacturer: manufacturer || "",
+          batch: batch || "",
+          description: description || "",
+          category: category || "General",
+          unit: unit || "pcs",
+          expiryDate: expiryDate || null,
+          reorderLevel: reorderLevel || 0,
           quantity,
           price,
         },
@@ -114,8 +176,15 @@ router.put(
         medicineCode: updated.medicineCode,
         name: updated.name,
         manufacturer: updated.manufacturer || "",
+        batch: updated.batch,
+        description: updated.description,
+        category: updated.category,
         quantity: updated.quantity,
+        unit: updated.unit,
         price: updated.price,
+        expiryDate: updated.expiryDate,
+        reorderLevel: updated.reorderLevel,
+        status: updated.status,
         createdAt: updated.createdAt,
         updatedAt: updated.updatedAt,
       });
