@@ -1,7 +1,13 @@
 const mongoose = require("mongoose");
+const shortid = require("shortid"); // 🔑 Added for medicineCode
 
 const medicineSchema = new mongoose.Schema({
-  name: { type: String, required: true },
+  // 🔑 Required by your routes (generated via shortid in POST or backfill)
+  medicineCode: { type: String, unique: true, required: true }, 
+  name: { type: String, required: true, unique: true, trim: true },
+  manufacturer: { type: String, default: "" },
+
+  // ----------- Original fields (unchanged) -----------
   batch: { type: String, default: "" },
   description: { type: String, default: "" },
   category: { type: String, default: "General" },
@@ -39,6 +45,15 @@ async function backfillExisting() {
     for (let med of medicines) {
       let changed = false;
 
+      // 🔄 Align with new schema defaults
+      if (med.medicineCode === undefined) {
+        med.medicineCode = shortid.generate(); // ✅ use shortid
+        changed = true;
+      }
+      if (med.manufacturer === undefined) {
+        med.manufacturer = "";
+        changed = true;
+      }
       if (med.batch === undefined) {
         med.batch = "";
         changed = true;

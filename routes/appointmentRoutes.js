@@ -91,6 +91,7 @@ router.post(
     try {
       const { patientId, staffId, appointmentDate, reason, status, notes } = req.body;
 
+      // 🔒 Enforce patient, staff, and date
       if (!patientId || !staffId || !appointmentDate) {
         return res.status(400).json({
           error: "Patient, staff, and appointment date are required",
@@ -99,15 +100,9 @@ router.post(
 
       // Ensure patient exists
       const patient = await Patient.findById(patientId);
-      if (!patient) {
-        return res.status(404).json({ error: "Patient not found" });
-      }
+      if (!patient) return res.status(404).json({ error: "Patient not found" });
 
-      // Optional: auto-fill missing required fields to avoid validation errors
-      if (!patient.ailment) patient.ailment = "Not specified";
-      await patient.save();
-
-      // Generate sequential appointment code
+      // Generate appointment code
       const appointmentCode = await generateAppointmentCode();
 
       const appointment = new Appointment({
@@ -122,7 +117,7 @@ router.post(
 
       const saved = await appointment.save();
 
-      // 🔗 Add appointment to patient's appointments array
+      // 🔗 Link appointment to patient's appointments array
       patient.appointments = patient.appointments || [];
       patient.appointments.push(saved._id);
       await patient.save();
@@ -150,7 +145,6 @@ router.post(
   }
 );
 
-
 // ================== UPDATE appointment ==================
 router.put(
   "/:id",
@@ -160,17 +154,14 @@ router.put(
     try {
       const { patientId } = req.body;
 
-      // If patientId is provided, check if the patient exists
-      if (patientId) {
-        const patient = await Patient.findById(patientId);
-        if (!patient) {
-          return res.status(404).json({ error: "Patient not found" });
-        }
-
-        // Auto-fill missing required fields to prevent validation errors
-        if (!patient.ailment) patient.ailment = "Not specified";
-        await patient.save();
+      // 🔒 Prevent removing patient
+      if (!patientId) {
+        return res.status(400).json({ error: "Patient cannot be removed from an appointment" });
       }
+
+      // Ensure patient exists
+      const patient = await Patient.findById(patientId);
+      if (!patient) return res.status(404).json({ error: "Patient not found" });
 
       const updated = await Appointment.findByIdAndUpdate(req.params.id, req.body, {
         new: true,
@@ -199,7 +190,6 @@ router.put(
     }
   }
 );
-
 
 // ================== DELETE appointment ==================
 router.delete(

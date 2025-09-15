@@ -44,7 +44,9 @@ router.post(
       const { name, manufacturer, quantity, price } = req.body;
 
       if (!name || quantity == null || price == null) {
-        return res.status(400).json({ error: "Name, quantity, and price are required" });
+        return res
+          .status(400)
+          .json({ error: "Name, quantity, and price are required" });
       }
 
       const existing = await Medicine.findOne({ name: name.trim() });
@@ -88,9 +90,20 @@ router.put(
     try {
       const { name, manufacturer, quantity, price } = req.body;
 
+      if (!name || quantity == null || price == null) {
+        return res
+          .status(400)
+          .json({ error: "Name, quantity, and price are required" });
+      }
+
       const updated = await Medicine.findByIdAndUpdate(
         req.params.id,
-        { name, manufacturer, quantity, price },
+        {
+          name: name.trim(),
+          manufacturer: manufacturer || "",
+          quantity,
+          price,
+        },
         { new: true, runValidators: true }
       );
 
