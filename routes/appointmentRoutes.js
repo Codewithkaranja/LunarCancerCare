@@ -97,6 +97,17 @@ router.post(
         });
       }
 
+      // Ensure patient exists
+      const patient = await Patient.findById(patientId);
+      if (!patient) {
+        return res.status(404).json({ error: "Patient not found" });
+      }
+
+      // Optional: auto-fill missing required fields to avoid validation errors
+      if (!patient.ailment) patient.ailment = "Not specified";
+      await patient.save();
+
+      // Generate sequential appointment code
       const appointmentCode = await generateAppointmentCode();
 
       const appointment = new Appointment({
@@ -112,12 +123,9 @@ router.post(
       const saved = await appointment.save();
 
       // 🔗 Add appointment to patient's appointments array
-      const patient = await Patient.findById(patientId);
-      if (patient) {
-        patient.appointments = patient.appointments || [];
-        patient.appointments.push(saved._id);
-        await patient.save();
-      }
+      patient.appointments = patient.appointments || [];
+      patient.appointments.push(saved._id);
+      await patient.save();
 
       const populated = await Appointment.findById(saved._id)
         .populate("patientId", "name patientCode")
@@ -142,6 +150,7 @@ router.post(
   }
 );
 
+
 // ================== UPDATE appointment ==================
 router.put(
   "/:id",
@@ -149,6 +158,20 @@ router.put(
   roleMiddleware([ROLES.ADMIN, ROLES.DOCTOR, ROLES.RECEPTIONIST]),
   async (req, res) => {
     try {
+      const { patientId } = req.body;
+
+      // If patientId is provided, check if the patient exists
+      if (patientId) {
+        const patient = await Patient.findById(patientId);
+        if (!patient) {
+          return res.status(404).json({ error: "Patient not found" });
+        }
+
+        // Auto-fill missing required fields to prevent validation errors
+        if (!patient.ailment) patient.ailment = "Not specified";
+        await patient.save();
+      }
+
       const updated = await Appointment.findByIdAndUpdate(req.params.id, req.body, {
         new: true,
         runValidators: true,
@@ -176,6 +199,7 @@ router.put(
     }
   }
 );
+
 
 // ================== DELETE appointment ==================
 router.delete(

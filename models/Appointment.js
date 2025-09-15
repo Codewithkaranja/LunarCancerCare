@@ -25,11 +25,12 @@ const appointmentSchema = new mongoose.Schema({
     trim: true,
     default: ""
   },
-  status: {
-    type: String,
-    enum: ["Pending", "Done", "Cancelled"],
-    default: "Pending"
-  }
+  status: { 
+  type: String, 
+  enum: ["Pending", "Ongoing", "Completed", "Cancelled"], 
+  default: "Pending" 
+}
+
 }, {
   timestamps: true // adds createdAt and updatedAt automatically
 });
