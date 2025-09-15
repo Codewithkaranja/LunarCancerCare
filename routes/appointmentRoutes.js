@@ -1,12 +1,22 @@
 // routes/appointmentRoutes.js
 const express = require("express");
 const router = express.Router();
-const shortid = require("shortid"); // for human-friendly appointment codes
 const Appointment = require("../models/Appointment");
 const Patient = require("../models/Patient");
 const { authMiddleware } = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
 const ROLES = require("../config/roles");
+
+// ================== HELPER: generate sequential appointment code ==================
+const generateAppointmentCode = async () => {
+  const count = await Appointment.countDocuments();
+  return `APT${(count + 1).toString().padStart(4, "0")}`;
+};
+
+// ================== TEST ROUTE ==================
+router.get("/test", (req, res) => {
+  res.json({ message: "Appointment route is working!" });
+});
 
 // ================== GET all appointments ==================
 router.get(
@@ -20,18 +30,20 @@ router.get(
         .populate("staffId", "name staffCode")
         .sort({ appointmentDate: 1 });
 
-      res.json(appointments.map(a => ({
-        id: a._id,
-        appointmentCode: a.appointmentCode,
-        patient: a.patientId,
-        staff: a.staffId,
-        appointmentDate: a.appointmentDate,
-        reason: a.reason,
-        notes: a.notes,
-        status: a.status,
-        createdAt: a.createdAt,
-        updatedAt: a.updatedAt,
-      })));
+      res.json(
+        appointments.map((a) => ({
+          id: a._id,
+          appointmentCode: a.appointmentCode,
+          patient: a.patientId,
+          staff: a.staffId,
+          appointmentDate: a.appointmentDate,
+          reason: a.reason,
+          notes: a.notes,
+          status: a.status,
+          createdAt: a.createdAt,
+          updatedAt: a.updatedAt,
+        }))
+      );
     } catch (err) {
       console.error("Error fetching appointments:", err);
       res.status(500).json({ error: err.message });
@@ -48,13 +60,17 @@ router.post(
     try {
       const { patientId, staffId, appointmentDate, reason, status, notes } = req.body;
 
+      console.log("POST /appointments body:", req.body);
+      console.log("Logged-in user:", req.user);
+
       if (!patientId || !staffId || !appointmentDate) {
         return res.status(400).json({
           error: "Patient, staff, and appointment date are required",
         });
       }
 
-      const appointmentCode = "APT-" + shortid.generate().toUpperCase();
+      // Generate sequential appointment code
+      const appointmentCode = await generateAppointmentCode();
 
       const appointment = new Appointment({
         patientId,
@@ -67,6 +83,14 @@ router.post(
       });
 
       const saved = await appointment.save();
+
+      // 🔗 Add appointment to patient's appointments array
+      const patient = await Patient.findById(patientId);
+      if (patient) {
+        patient.appointments = patient.appointments || [];
+        patient.appointments.push(saved._id);
+        await patient.save();
+      }
 
       const populated = await Appointment.findById(saved._id)
         .populate("patientId", "name patientCode")
@@ -86,7 +110,7 @@ router.post(
       });
     } catch (err) {
       console.error("Error creating appointment:", err);
-      res.status(400).json({ error: err.message });
+      res.status(400).json({ error: err.message, details: err.stack });
     }
   }
 );
@@ -98,11 +122,12 @@ router.put(
   roleMiddleware([ROLES.ADMIN, ROLES.DOCTOR, ROLES.RECEPTIONIST]),
   async (req, res) => {
     try {
-      const updated = await Appointment.findByIdAndUpdate(
-        req.params.id,
-        req.body,
-        { new: true, runValidators: true }
-      )
+      console.log(`PUT /appointments/${req.params.id} body:`, req.body);
+
+      const updated = await Appointment.findByIdAndUpdate(req.params.id, req.body, {
+        new: true,
+        runValidators: true,
+      })
         .populate("patientId", "name patientCode")
         .populate("staffId", "name staffCode");
 
@@ -124,7 +149,7 @@ router.put(
       });
     } catch (err) {
       console.error("Error updating appointment:", err);
-      res.status(400).json({ error: err.message });
+      res.status(400).json({ error: err.message, details: err.stack });
     }
   }
 );
@@ -141,13 +166,22 @@ router.delete(
         return res.status(404).json({ error: "Appointment not found" });
       }
 
+      // 🔗 Remove appointment from patient's appointments array
+      const patient = await Patient.findById(deleted.patientId);
+      if (patient) {
+        patient.appointments = patient.appointments.filter(
+          (id) => id.toString() !== deleted._id.toString()
+        );
+        await patient.save();
+      }
+
       res.json({
         message: "Appointment deleted successfully",
         appointmentId: deleted._id,
       });
     } catch (err) {
       console.error("Error deleting appointment:", err);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: err.message, details: err.stack });
     }
   }
 );
