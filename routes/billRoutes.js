@@ -24,8 +24,9 @@ router.post(
   async (req, res) => {
     try {
       const { patient, items } = req.body;
-      if (!items || items.length === 0)
+      if (!items || items.length === 0) {
         return res.status(400).json({ error: "Bill must have at least one item" });
+      }
 
       const totalAmount = items.reduce((sum, item) => sum + item.amount, 0);
 
@@ -55,25 +56,30 @@ router.post(
       });
     } catch (err) {
       console.error("Error creating bill:", err);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: "Failed to create bill" });
     }
   }
 );
 
-// ================== GET all bills ==================
+// ================== GET all bills (with optional filters) ==================
 router.get(
   "/",
   authMiddleware,
   roleMiddleware([ROLES.ADMIN, ROLES.RECEPTIONIST]),
   async (req, res) => {
     try {
-      const bills = await Bill.find()
+      const { status, patient } = req.query;
+      const filter = {};
+      if (status) filter.status = status;
+      if (patient) filter.patient = patient;
+
+      const bills = await Bill.find(filter)
         .populate("patient", "name patientCode")
         .populate("createdBy", "name staffCode role")
         .sort({ createdAt: -1 });
 
       res.json(
-        bills.map(b => ({
+        bills.map((b) => ({
           id: b._id,
           billId: b.billId,
           patient: b.patient,
@@ -87,7 +93,7 @@ router.get(
       );
     } catch (err) {
       console.error("Error fetching bills:", err);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: "Failed to fetch bills" });
     }
   }
 );
@@ -105,7 +111,7 @@ router.get(
         .sort({ createdAt: -1 });
 
       res.json(
-        bills.map(b => ({
+        bills.map((b) => ({
           id: b._id,
           billId: b.billId,
           patient: b.patient,
@@ -119,7 +125,38 @@ router.get(
       );
     } catch (err) {
       console.error("Error fetching patient bills:", err);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: "Failed to fetch patient bills" });
+    }
+  }
+);
+
+// ================== GET single bill by ID ==================
+router.get(
+  "/:id",
+  authMiddleware,
+  roleMiddleware([ROLES.ADMIN, ROLES.RECEPTIONIST, ROLES.DOCTOR]),
+  async (req, res) => {
+    try {
+      const bill = await Bill.findById(req.params.id)
+        .populate("patient", "name patientCode")
+        .populate("createdBy", "name staffCode role");
+
+      if (!bill) return res.status(404).json({ error: "Bill not found" });
+
+      res.json({
+        id: bill._id,
+        billId: bill.billId,
+        patient: bill.patient,
+        items: bill.items,
+        totalAmount: bill.totalAmount,
+        status: bill.status,
+        createdBy: bill.createdBy,
+        createdAt: bill.createdAt,
+        updatedAt: bill.updatedAt,
+      });
+    } catch (err) {
+      console.error("Error fetching bill:", err);
+      res.status(500).json({ error: "Failed to fetch bill" });
     }
   }
 );
@@ -132,10 +169,15 @@ router.patch(
   async (req, res) => {
     try {
       const { status } = req.body;
-      if (!["unpaid", "paid", "pending"].includes(status))
+      if (!["unpaid", "paid", "pending"].includes(status)) {
         return res.status(400).json({ error: "Invalid status" });
+      }
 
-      const updated = await Bill.findByIdAndUpdate(req.params.id, { status }, { new: true })
+      const updated = await Bill.findByIdAndUpdate(
+        req.params.id,
+        { status },
+        { new: true }
+      )
         .populate("patient", "name patientCode")
         .populate("createdBy", "name staffCode role");
 
@@ -154,7 +196,7 @@ router.patch(
       });
     } catch (err) {
       console.error("Error updating bill status:", err);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: "Failed to update bill status" });
     }
   }
 );
@@ -169,10 +211,10 @@ router.delete(
       const deleted = await Bill.findByIdAndDelete(req.params.id);
       if (!deleted) return res.status(404).json({ error: "Bill not found" });
 
-      res.json({ message: "Bill deleted successfully", billId: deleted._id });
+      res.json({ message: "Bill deleted successfully", billId: deleted.billId });
     } catch (err) {
       console.error("Error deleting bill:", err);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: "Failed to delete bill" });
     }
   }
 );
