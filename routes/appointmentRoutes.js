@@ -1,4 +1,3 @@
-// routes/appointmentRoutes.js
 const express = require("express");
 const router = express.Router();
 const Appointment = require("../models/Appointment");
@@ -51,6 +50,38 @@ router.get(
   }
 );
 
+// ================== GET single appointment by ID ==================
+router.get(
+  "/:id",
+  authMiddleware,
+  roleMiddleware([ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE, ROLES.RECEPTIONIST, ROLES.PHARMACIST]),
+  async (req, res) => {
+    try {
+      const appointment = await Appointment.findById(req.params.id)
+        .populate("patientId", "name patientCode")
+        .populate("staffId", "name staffCode");
+
+      if (!appointment) return res.status(404).json({ error: "Appointment not found" });
+
+      res.json({
+        id: appointment._id,
+        appointmentCode: appointment.appointmentCode,
+        patient: appointment.patientId,
+        staff: appointment.staffId,
+        appointmentDate: appointment.appointmentDate,
+        reason: appointment.reason,
+        notes: appointment.notes,
+        status: appointment.status,
+        createdAt: appointment.createdAt,
+        updatedAt: appointment.updatedAt,
+      });
+    } catch (err) {
+      console.error("Error fetching appointment:", err);
+      res.status(500).json({ error: err.message });
+    }
+  }
+);
+
 // ================== CREATE appointment ==================
 router.post(
   "/",
@@ -60,16 +91,12 @@ router.post(
     try {
       const { patientId, staffId, appointmentDate, reason, status, notes } = req.body;
 
-      console.log("POST /appointments body:", req.body);
-      console.log("Logged-in user:", req.user);
-
       if (!patientId || !staffId || !appointmentDate) {
         return res.status(400).json({
           error: "Patient, staff, and appointment date are required",
         });
       }
 
-      // Generate sequential appointment code
       const appointmentCode = await generateAppointmentCode();
 
       const appointment = new Appointment({
@@ -122,8 +149,6 @@ router.put(
   roleMiddleware([ROLES.ADMIN, ROLES.DOCTOR, ROLES.RECEPTIONIST]),
   async (req, res) => {
     try {
-      console.log(`PUT /appointments/${req.params.id} body:`, req.body);
-
       const updated = await Appointment.findByIdAndUpdate(req.params.id, req.body, {
         new: true,
         runValidators: true,
@@ -131,9 +156,7 @@ router.put(
         .populate("patientId", "name patientCode")
         .populate("staffId", "name staffCode");
 
-      if (!updated) {
-        return res.status(404).json({ error: "Appointment not found" });
-      }
+      if (!updated) return res.status(404).json({ error: "Appointment not found" });
 
       res.json({
         id: updated._id,
@@ -162,9 +185,7 @@ router.delete(
   async (req, res) => {
     try {
       const deleted = await Appointment.findByIdAndDelete(req.params.id);
-      if (!deleted) {
-        return res.status(404).json({ error: "Appointment not found" });
-      }
+      if (!deleted) return res.status(404).json({ error: "Appointment not found" });
 
       // 🔗 Remove appointment from patient's appointments array
       const patient = await Patient.findById(deleted.patientId);
