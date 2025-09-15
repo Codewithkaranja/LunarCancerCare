@@ -2,6 +2,7 @@ const express = require("express");
 const router = express.Router();
 const LabTest = require("../models/labTest");
 const Patient = require("../models/Patient");
+const Staff = require("../models/Staff"); // Needed to fetch staff name
 const { authMiddleware } = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
 const ROLES = require("../config/roles");
@@ -23,7 +24,7 @@ router.get("/", authMiddleware, async (req, res) => {
     const labTests = await LabTest.find().populate("patientId", "name patientCode");
     res.json(labTests);
   } catch (err) {
-    console.error("Error fetching lab tests:", err);
+    console.error("Error fetching lab tests:", err.message, err.stack);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -35,7 +36,7 @@ router.get("/:id", authMiddleware, async (req, res) => {
     if (!labTest) return res.status(404).json({ error: "Lab test not found" });
     res.json(labTest);
   } catch (err) {
-    console.error("Error fetching lab test:", err);
+    console.error("Error fetching lab test:", err.message, err.stack);
     res.status(500).json({ error: "Internal server error" });
   }
 });
@@ -49,14 +50,25 @@ router.post(
     try {
       const { patientId, testName, result, unit, referenceRange, performedBy } = req.body;
 
+      console.log("Request body:", req.body);
+      console.log("Logged-in user:", req.user);
+
       if (!patientId || !testName || !result) {
         return res.status(400).json({ error: "patientId, testName, and result are required" });
       }
 
       const patient = await Patient.findById(patientId);
+      console.log("Patient found:", patient);
       if (!patient) return res.status(404).json({ error: "Patient not found" });
 
       const labTestCode = await generateLabTestCode();
+
+      // Fetch staff name if performedBy not provided
+      let performedByName = performedBy;
+      if (!performedBy) {
+        const staff = await Staff.findById(req.user.id);
+        performedByName = staff ? staff.name : "System";
+      }
 
       const labTest = new LabTest({
         patientId,
@@ -64,7 +76,7 @@ router.post(
         result,
         unit: unit || "",
         referenceRange: referenceRange || "",
-        performedBy: performedBy || req.user.name,
+        performedBy: performedByName,
         labTestCode,
       });
 
@@ -80,7 +92,7 @@ router.post(
 
       res.status(201).json(populatedLabTest);
     } catch (err) {
-      console.error("Error adding lab test:", err);
+      console.error("Error adding lab test:", err.message, err.stack);
       res.status(500).json({ error: "Internal server error" });
     }
   }
@@ -105,7 +117,7 @@ router.put(
 
       res.json(updated);
     } catch (err) {
-      console.error("Error updating lab test:", err);
+      console.error("Error updating lab test:", err.message, err.stack);
       res.status(500).json({ error: "Internal server error" });
     }
   }
@@ -130,7 +142,7 @@ router.delete(
 
       res.json({ message: "Lab test deleted successfully" });
     } catch (err) {
-      console.error("Error deleting lab test:", err);
+      console.error("Error deleting lab test:", err.message, err.stack);
       res.status(500).json({ error: "Internal server error" });
     }
   }
