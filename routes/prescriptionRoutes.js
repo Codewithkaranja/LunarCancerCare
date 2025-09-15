@@ -9,8 +9,11 @@ const ROLES = require("../config/roles");
 
 // ================== Helper: Generate sequential prescription code ==================
 const generatePrescriptionCode = async () => {
-  const count = await Prescription.countDocuments();
-  return `PRSC${(count + 1).toString().padStart(4, "0")}`; // PRSC0001, PRSC0002, etc.
+  const lastPrescription = await Prescription.findOne().sort({ createdAt: -1 });
+  if (!lastPrescription) return "PRSC0001";
+
+  const lastNum = parseInt(lastPrescription.prescriptionCode.replace("PRSC", ""), 10);
+  return `PRSC${(lastNum + 1).toString().padStart(4, "0")}`;
 };
 
 // ================== GET all prescriptions ==================
@@ -22,7 +25,7 @@ router.get(
     try {
       const prescriptions = await Prescription.find()
         .populate("patientId", "name patientCode")
-        .populate("prescribedBy", "name staffCode")
+        .populate("prescribedBy", "name staffCode role")
         .sort({ createdAt: -1 });
 
       res.json(
@@ -33,12 +36,48 @@ router.get(
           prescribedBy: p.prescribedBy,
           items: p.items,
           notes: p.notes || "",
+          status: p.status,
+          issuedDate: p.issuedDate,
+          dispensedDate: p.dispensedDate || null,
           createdAt: p.createdAt,
           updatedAt: p.updatedAt,
         }))
       );
     } catch (err) {
       console.error("Error fetching prescriptions:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ================== GET single prescription ==================
+router.get(
+  "/:id",
+  authMiddleware,
+  roleMiddleware([ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE, ROLES.PHARMACIST]),
+  async (req, res) => {
+    try {
+      const prescription = await Prescription.findById(req.params.id)
+        .populate("patientId", "name patientCode")
+        .populate("prescribedBy", "name staffCode role");
+
+      if (!prescription) return res.status(404).json({ error: "Prescription not found" });
+
+      res.json({
+        id: prescription._id,
+        prescriptionCode: prescription.prescriptionCode,
+        patient: prescription.patientId,
+        prescribedBy: prescription.prescribedBy,
+        items: prescription.items,
+        notes: prescription.notes || "",
+        status: prescription.status,
+        issuedDate: prescription.issuedDate,
+        dispensedDate: prescription.dispensedDate || null,
+        createdAt: prescription.createdAt,
+        updatedAt: prescription.updatedAt,
+      });
+    } catch (err) {
+      console.error("Error fetching prescription:", err);
       res.status(500).json({ error: "Internal server error" });
     }
   }
@@ -51,9 +90,8 @@ router.post(
   roleMiddleware([ROLES.ADMIN, ROLES.DOCTOR]),
   async (req, res) => {
     try {
-      const { patientId, prescribedBy, items, notes } = req.body;
+      const { patientId, items, notes } = req.body;
 
-      // Validate required fields
       if (!patientId || !items || !Array.isArray(items) || items.length === 0) {
         return res.status(400).json({ error: "Patient and prescription items are required" });
       }
@@ -65,22 +103,22 @@ router.post(
 
       const prescription = new Prescription({
         patientId,
-        prescribedBy: prescribedBy || req.user?.name || "Unknown",
+        prescribedBy: req.user.id,
         items,
         notes: notes || "",
         prescriptionCode,
+        status: "Pending", // ✅ default
       });
 
-      const savedPrescription = await prescription.save();
+      const saved = await prescription.save();
 
-      // Add prescription ID to patient's prescriptions array
       patient.prescriptions = patient.prescriptions || [];
-      patient.prescriptions.push(savedPrescription._id);
+      patient.prescriptions.push(saved._id);
       await patient.save();
 
-      const populated = await Prescription.findById(savedPrescription._id)
+      const populated = await Prescription.findById(saved._id)
         .populate("patientId", "name patientCode")
-        .populate("prescribedBy", "name staffCode");
+        .populate("prescribedBy", "name staffCode role");
 
       res.status(201).json({
         id: populated._id,
@@ -89,6 +127,9 @@ router.post(
         prescribedBy: populated.prescribedBy,
         items: populated.items,
         notes: populated.notes || "",
+        status: populated.status,
+        issuedDate: populated.issuedDate,
+        dispensedDate: populated.dispensedDate || null,
         createdAt: populated.createdAt,
         updatedAt: populated.updatedAt,
       });
@@ -106,30 +147,101 @@ router.put(
   roleMiddleware([ROLES.ADMIN, ROLES.DOCTOR]),
   async (req, res) => {
     try {
-      const { items, notes } = req.body;
+      const { items, notes, status } = req.body;
 
-      const updatedPrescription = await Prescription.findByIdAndUpdate(
+      const updateData = { items, notes, status };
+      if (status === "Dispensed") updateData.dispensedDate = new Date();
+
+      const updated = await Prescription.findByIdAndUpdate(
         req.params.id,
-        { items, notes },
+        updateData,
         { new: true, runValidators: true }
       )
         .populate("patientId", "name patientCode")
-        .populate("prescribedBy", "name staffCode");
+        .populate("prescribedBy", "name staffCode role");
 
-      if (!updatedPrescription) return res.status(404).json({ error: "Prescription not found" });
+      if (!updated) return res.status(404).json({ error: "Prescription not found" });
 
       res.json({
-        id: updatedPrescription._id,
-        prescriptionCode: updatedPrescription.prescriptionCode,
-        patient: updatedPrescription.patientId,
-        prescribedBy: updatedPrescription.prescribedBy,
-        items: updatedPrescription.items,
-        notes: updatedPrescription.notes || "",
-        createdAt: updatedPrescription.createdAt,
-        updatedAt: updatedPrescription.updatedAt,
+        id: updated._id,
+        prescriptionCode: updated.prescriptionCode,
+        patient: updated.patientId,
+        prescribedBy: updated.prescribedBy,
+        items: updated.items,
+        notes: updated.notes || "",
+        status: updated.status,
+        issuedDate: updated.issuedDate,
+        dispensedDate: updated.dispensedDate || null,
+        createdAt: updated.createdAt,
+        updatedAt: updated.updatedAt,
       });
     } catch (err) {
       console.error("Error updating prescription:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ================== DISPENSE prescription (Pharmacist/Admin) ==================
+router.put(
+  "/:id/dispense",
+  authMiddleware,
+  roleMiddleware([ROLES.PHARMACIST, ROLES.ADMIN]),
+  async (req, res) => {
+    try {
+      const updated = await Prescription.findByIdAndUpdate(
+        req.params.id,
+        { status: "Dispensed", dispensedDate: new Date() },
+        { new: true }
+      )
+        .populate("patientId", "name patientCode")
+        .populate("prescribedBy", "name staffCode role");
+
+      if (!updated) return res.status(404).json({ error: "Prescription not found" });
+
+      res.json({
+        message: "Prescription dispensed successfully",
+        prescription: {
+          id: updated._id,
+          prescriptionCode: updated.prescriptionCode,
+          status: updated.status,
+          dispensedDate: updated.dispensedDate,
+        },
+      });
+    } catch (err) {
+      console.error("Error dispensing prescription:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
+  }
+);
+
+// ================== CANCEL prescription (Admin/Doctor) ==================
+router.put(
+  "/:id/cancel",
+  authMiddleware,
+  roleMiddleware([ROLES.ADMIN, ROLES.DOCTOR]),
+  async (req, res) => {
+    try {
+      const updated = await Prescription.findByIdAndUpdate(
+        req.params.id,
+        { status: "Cancelled" },
+        { new: true }
+      )
+        .populate("patientId", "name patientCode")
+        .populate("prescribedBy", "name staffCode role");
+
+      if (!updated) return res.status(404).json({ error: "Prescription not found" });
+
+      res.json({
+        message: "Prescription cancelled successfully",
+        prescription: {
+          id: updated._id,
+          prescriptionCode: updated.prescriptionCode,
+          status: updated.status,
+        },
+      });
+    } catch (err) {
+      console.error("Error cancelling prescription:", err);
       res.status(500).json({ error: "Internal server error" });
     }
   }
@@ -142,15 +254,17 @@ router.delete(
   roleMiddleware([ROLES.ADMIN]),
   async (req, res) => {
     try {
-      const deletedPrescription = await Prescription.findByIdAndDelete(req.params.id);
-      if (!deletedPrescription) return res.status(404).json({ error: "Prescription not found" });
+      const deleted = await Prescription.findByIdAndDelete(req.params.id);
+      if (!deleted) return res.status(404).json({ error: "Prescription not found" });
 
-      // Remove prescription ID from patient's prescriptions array
-      await Patient.findByIdAndUpdate(deletedPrescription.patientId, {
-        $pull: { prescriptions: deletedPrescription._id },
+      await Patient.findByIdAndUpdate(deleted.patientId, {
+        $pull: { prescriptions: deleted._id },
       });
 
-      res.json({ message: "Prescription deleted successfully", prescriptionId: deletedPrescription._id });
+      res.json({
+        message: "Prescription deleted successfully",
+        prescriptionId: deleted._id,
+      });
     } catch (err) {
       console.error("Error deleting prescription:", err);
       res.status(500).json({ error: "Internal server error" });
