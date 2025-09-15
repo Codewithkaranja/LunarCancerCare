@@ -2,12 +2,12 @@ const express = require("express");
 const router = express.Router();
 const LabTest = require("../models/labTest");
 const Patient = require("../models/Patient");
-const Staff = require("../models/Staff"); // Needed to fetch staff name
+const Staff = require("../models/Staff");
 const { authMiddleware } = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
 const ROLES = require("../config/roles");
 
-// Helper to generate sequential lab test code
+// Helper: generate sequential lab test code
 const generateLabTestCode = async () => {
   const count = await LabTest.countDocuments();
   return `LAB${(count + 1).toString().padStart(4, "0")}`;
@@ -50,26 +50,37 @@ router.post(
     try {
       const { patientId, testName, result, unit, referenceRange, performedBy } = req.body;
 
-      console.log("Request body:", req.body);
+      // Log incoming data
+      console.log("POST /lab-tests body:", req.body);
       console.log("Logged-in user:", req.user);
 
       if (!patientId || !testName || !result) {
         return res.status(400).json({ error: "patientId, testName, and result are required" });
       }
 
+      // Verify patient exists
       const patient = await Patient.findById(patientId);
-      console.log("Patient found:", patient);
-      if (!patient) return res.status(404).json({ error: "Patient not found" });
-
-      const labTestCode = await generateLabTestCode();
-
-      // Fetch staff name if performedBy not provided
-      let performedByName = performedBy;
-      if (!performedBy) {
-        const staff = await Staff.findById(req.user.id);
-        performedByName = staff ? staff.name : "System";
+      if (!patient) {
+        console.error("Patient not found for ID:", patientId);
+        return res.status(404).json({ error: "Patient not found" });
       }
 
+      // Generate lab test code
+      const labTestCode = await generateLabTestCode();
+
+      // Determine performedBy name safely
+      let performedByName = performedBy;
+      if (!performedByName) {
+        try {
+          const staff = await Staff.findById(req.user?.id);
+          performedByName = staff ? staff.name : "System";
+        } catch (err) {
+          console.warn("Failed to fetch staff for performedBy:", err.message);
+          performedByName = "System";
+        }
+      }
+
+      // Create new lab test
       const labTest = new LabTest({
         patientId,
         testName,
@@ -82,18 +93,20 @@ router.post(
 
       const savedLabTest = await labTest.save();
 
-      // Push to patient's labTests array
+      // Add labTest to patient's array
       patient.labTests = patient.labTests || [];
       patient.labTests.push(savedLabTest._id);
       await patient.save();
 
-      const populatedLabTest = await LabTest.findById(savedLabTest._id)
-        .populate("patientId", "name patientCode");
+      const populatedLabTest = await LabTest.findById(savedLabTest._id).populate("patientId", "name patientCode");
 
       res.status(201).json(populatedLabTest);
     } catch (err) {
       console.error("Error adding lab test:", err.message, err.stack);
-      res.status(500).json({ error: "Internal server error" });
+      res.status(500).json({
+        error: "Internal server error",
+        details: err.message, // optional: give more info for debugging
+      });
     }
   }
 );
