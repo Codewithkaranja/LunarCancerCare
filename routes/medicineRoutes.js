@@ -1,9 +1,9 @@
 // routes/medicineRoutes.js
 const express = require("express");
 const router = express.Router();
-const shortid = require("shortid"); // ✅ for medicine codes
+const shortid = require("shortid"); // For human-friendly medicine codes
 const Medicine = require("../models/Medicine");
-const { authMiddleware } = require("../middleware/authMiddleware"); // ✅ destructured
+const { authMiddleware } = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
 const ROLES = require("../config/roles");
 
@@ -15,46 +15,66 @@ router.get(
   async (req, res) => {
     try {
       const medicines = await Medicine.find().sort({ name: 1 });
-      res.json(medicines);
+      res.json(
+        medicines.map((m) => ({
+          id: m._id,
+          medicineCode: m.medicineCode,
+          name: m.name,
+          manufacturer: m.manufacturer || "",
+          quantity: m.quantity,
+          price: m.price,
+          createdAt: m.createdAt,
+          updatedAt: m.updatedAt,
+        }))
+      );
     } catch (err) {
       console.error("Error fetching medicines:", err);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: "Internal server error" });
     }
   }
 );
 
-// ================== ADD medicine ==================
+// ================== ADD new medicine ==================
 router.post(
   "/",
   authMiddleware,
   roleMiddleware([ROLES.ADMIN, ROLES.PHARMACIST]),
   async (req, res) => {
-    const { name, manufacturer, quantity, price } = req.body;
-
-    if (!name || !quantity || !price) {
-      return res.status(400).json({ error: "Name, quantity, and price are required" });
-    }
-
     try {
-      const existing = await Medicine.findOne({ name });
+      const { name, manufacturer, quantity, price } = req.body;
+
+      if (!name || quantity == null || price == null) {
+        return res.status(400).json({ error: "Name, quantity, and price are required" });
+      }
+
+      const existing = await Medicine.findOne({ name: name.trim() });
       if (existing) return res.status(409).json({ error: "Medicine already exists" });
 
-      // ✅ generate human-friendly medicine code
-      const medicineCode = "MED-" + shortid.generate().toUpperCase();
+      const medicineCode = `MED-${shortid.generate().toUpperCase()}`;
 
       const medicine = new Medicine({
-        name,
+        name: name.trim(),
         manufacturer: manufacturer || "",
         quantity,
         price,
-        medicineCode, // ✅ added
+        medicineCode,
       });
 
-      const savedMedicine = await medicine.save();
-      res.status(201).json(savedMedicine);
+      const saved = await medicine.save();
+
+      res.status(201).json({
+        id: saved._id,
+        medicineCode: saved.medicineCode,
+        name: saved.name,
+        manufacturer: saved.manufacturer,
+        quantity: saved.quantity,
+        price: saved.price,
+        createdAt: saved.createdAt,
+        updatedAt: saved.updatedAt,
+      });
     } catch (err) {
       console.error("Error adding medicine:", err);
-      res.status(400).json({ error: err.message });
+      res.status(500).json({ error: "Internal server error" });
     }
   }
 );
@@ -66,18 +86,29 @@ router.put(
   roleMiddleware([ROLES.ADMIN, ROLES.PHARMACIST]),
   async (req, res) => {
     try {
-      const updatedMedicine = await Medicine.findByIdAndUpdate(
+      const { name, manufacturer, quantity, price } = req.body;
+
+      const updated = await Medicine.findByIdAndUpdate(
         req.params.id,
-        req.body,
+        { name, manufacturer, quantity, price },
         { new: true, runValidators: true }
       );
 
-      if (!updatedMedicine) return res.status(404).json({ error: "Medicine not found" });
+      if (!updated) return res.status(404).json({ error: "Medicine not found" });
 
-      res.json(updatedMedicine);
+      res.json({
+        id: updated._id,
+        medicineCode: updated.medicineCode,
+        name: updated.name,
+        manufacturer: updated.manufacturer || "",
+        quantity: updated.quantity,
+        price: updated.price,
+        createdAt: updated.createdAt,
+        updatedAt: updated.updatedAt,
+      });
     } catch (err) {
       console.error("Error updating medicine:", err);
-      res.status(400).json({ error: err.message });
+      res.status(500).json({ error: "Internal server error" });
     }
   }
 );
@@ -89,13 +120,13 @@ router.delete(
   roleMiddleware([ROLES.ADMIN]),
   async (req, res) => {
     try {
-      const deletedMedicine = await Medicine.findByIdAndDelete(req.params.id);
-      if (!deletedMedicine) return res.status(404).json({ error: "Medicine not found" });
+      const deleted = await Medicine.findByIdAndDelete(req.params.id);
+      if (!deleted) return res.status(404).json({ error: "Medicine not found" });
 
-      res.json({ message: "Medicine deleted successfully" });
+      res.json({ message: "Medicine deleted successfully", medicineId: deleted._id });
     } catch (err) {
       console.error("Error deleting medicine:", err);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: "Internal server error" });
     }
   }
 );

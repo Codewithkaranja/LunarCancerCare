@@ -13,7 +13,7 @@ const patientSchema = new mongoose.Schema(
     phone: { type: String },
     nationalId: { type: String },
     ailment: { type: String, required: true },
-    admissionDate: { type: Date, default: Date.now }, // fallback for createdAt
+    admissionDate: { type: Date, default: Date.now },
 
     // 🔗 Relationships
     appointments: [
@@ -24,9 +24,15 @@ const patientSchema = new mongoose.Schema(
     ],
     prescriptions: [
       { type: mongoose.Schema.Types.ObjectId, ref: "Prescription" }
-    ]
+    ],
+    labTests: [
+      { type: mongoose.Schema.Types.ObjectId, ref: "LabTest" } // ✅ added lab tests reference
+    ],
+
+    // Optional: sequential patient code
+    patientCode: { type: String, unique: true }
   },
-  { timestamps: true } // gives createdAt & updatedAt automatically
+  { timestamps: true }
 );
 
 module.exports = mongoose.model("Patient", patientSchema);

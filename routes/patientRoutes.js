@@ -1,11 +1,16 @@
 // routes/patientRoutes.js
 const express = require("express");
 const router = express.Router();
-const shortid = require("shortid"); // ✅ for patient codes
 const Patient = require("../models/Patient");
-const { authMiddleware } = require("../middleware/authMiddleware"); // ✅ destructured
+const { authMiddleware } = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
 const ROLES = require("../config/roles");
+
+// ================== Helper: Generate sequential patient code ==================
+const generatePatientCode = async () => {
+  const count = await Patient.countDocuments();
+  return `PAT${(count + 1).toString().padStart(4, "0")}`; // PAT0001, PAT0002, etc.
+};
 
 // ================== GET all patients ==================
 router.get(
@@ -15,7 +20,26 @@ router.get(
   async (req, res) => {
     try {
       const patients = await Patient.find().sort({ createdAt: -1 });
-      res.json(patients);
+      res.json(
+        patients.map((patient) => ({
+          id: patient._id,
+          patientCode: patient.patientCode,
+          name: patient.name,
+          age: patient.age,
+          gender: patient.gender,
+          email: patient.email || "",
+          phone: patient.phone || "",
+          nationalId: patient.nationalId || "",
+          ailment: patient.ailment,
+          admissionDate: patient.admissionDate,
+          appointments: patient.appointments,
+          bills: patient.bills,
+          prescriptions: patient.prescriptions,
+          labTests: patient.labTests,
+          createdAt: patient.createdAt,
+          updatedAt: patient.updatedAt,
+        }))
+      );
     } catch (err) {
       console.error("Error fetching patients:", err);
       res.status(500).json({ error: err.message });
@@ -29,31 +53,46 @@ router.post(
   authMiddleware,
   roleMiddleware([ROLES.ADMIN, ROLES.DOCTOR, ROLES.RECEPTIONIST]),
   async (req, res) => {
-    const { name, age, gender, contact, address, medicalHistory } = req.body;
-
-    if (!name || !age || !gender) {
-      return res.status(400).json({ error: "Name, age, and gender are required" });
-    }
-
     try {
-      // ✅ Generate human-friendly patient code
-      const patientCode = "PAT-" + shortid.generate().toUpperCase();
+      const { name, age, gender, email, phone, nationalId, ailment, admissionDate } = req.body;
+
+      if (!name || !age || !gender || !ailment) {
+        return res.status(400).json({ error: "Name, age, gender, and ailment are required" });
+      }
+
+      const patientCode = await generatePatientCode();
 
       const patient = new Patient({
         name,
         age,
         gender,
-        contact: contact || "",
-        address: address || "",
-        medicalHistory: Array.isArray(medicalHistory) ? medicalHistory : [],
-        patientCode, // ✅ added
+        email: email || "",
+        phone: phone || "",
+        nationalId: nationalId || "",
+        ailment,
+        admissionDate: admissionDate || Date.now(),
+        patientCode,
       });
 
       const savedPatient = await patient.save();
 
       res.status(201).json({
-        ...savedPatient.toObject(),
-        patientCode: savedPatient.patientCode // ✅ include code in response
+        id: savedPatient._id,
+        patientCode: savedPatient.patientCode,
+        name: savedPatient.name,
+        age: savedPatient.age,
+        gender: savedPatient.gender,
+        email: savedPatient.email,
+        phone: savedPatient.phone,
+        nationalId: savedPatient.nationalId,
+        ailment: savedPatient.ailment,
+        admissionDate: savedPatient.admissionDate,
+        appointments: savedPatient.appointments,
+        bills: savedPatient.bills,
+        prescriptions: savedPatient.prescriptions,
+        labTests: savedPatient.labTests,
+        createdAt: savedPatient.createdAt,
+        updatedAt: savedPatient.updatedAt,
       });
     } catch (err) {
       console.error("Error adding patient:", err);
@@ -69,15 +108,31 @@ router.put(
   roleMiddleware([ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE]),
   async (req, res) => {
     try {
-      const updatedPatient = await Patient.findByIdAndUpdate(
-        req.params.id,
-        req.body,
-        { new: true, runValidators: true }
-      );
-      if (!updatedPatient) {
-        return res.status(404).json({ error: "Patient not found" });
-      }
-      res.json(updatedPatient);
+      const updatedPatient = await Patient.findByIdAndUpdate(req.params.id, req.body, {
+        new: true,
+        runValidators: true,
+      });
+
+      if (!updatedPatient) return res.status(404).json({ error: "Patient not found" });
+
+      res.json({
+        id: updatedPatient._id,
+        patientCode: updatedPatient.patientCode,
+        name: updatedPatient.name,
+        age: updatedPatient.age,
+        gender: updatedPatient.gender,
+        email: updatedPatient.email,
+        phone: updatedPatient.phone,
+        nationalId: updatedPatient.nationalId,
+        ailment: updatedPatient.ailment,
+        admissionDate: updatedPatient.admissionDate,
+        appointments: updatedPatient.appointments,
+        bills: updatedPatient.bills,
+        prescriptions: updatedPatient.prescriptions,
+        labTests: updatedPatient.labTests,
+        createdAt: updatedPatient.createdAt,
+        updatedAt: updatedPatient.updatedAt,
+      });
     } catch (err) {
       console.error("Error updating patient:", err);
       res.status(400).json({ error: err.message });
@@ -93,10 +148,9 @@ router.delete(
   async (req, res) => {
     try {
       const deletedPatient = await Patient.findByIdAndDelete(req.params.id);
-      if (!deletedPatient) {
-        return res.status(404).json({ error: "Patient not found" });
-      }
-      res.json({ message: "Patient deleted successfully" });
+      if (!deletedPatient) return res.status(404).json({ error: "Patient not found" });
+
+      res.json({ message: "Patient deleted successfully", patientId: deletedPatient._id });
     } catch (err) {
       console.error("Error deleting patient:", err);
       res.status(500).json({ error: err.message });

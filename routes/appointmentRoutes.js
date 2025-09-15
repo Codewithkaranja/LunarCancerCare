@@ -1,32 +1,37 @@
 // routes/appointmentRoutes.js
 const express = require("express");
 const router = express.Router();
-const shortid = require("shortid"); // ✅ for appointment codes
+const shortid = require("shortid"); // for human-friendly appointment codes
 const Appointment = require("../models/Appointment");
-const { authMiddleware } = require("../middleware/authMiddleware"); // ✅ destructured
+const Patient = require("../models/Patient");
+const { authMiddleware } = require("../middleware/authMiddleware");
 const roleMiddleware = require("../middleware/roleMiddleware");
 const ROLES = require("../config/roles");
 
 // ================== GET all appointments ==================
-// Allowed: Admin, Doctor, Nurse, Receptionist, Pharmacist
 router.get(
   "/",
   authMiddleware,
-  roleMiddleware([
-    ROLES.ADMIN,
-    ROLES.DOCTOR,
-    ROLES.NURSE,
-    ROLES.RECEPTIONIST,
-    ROLES.PHARMACIST,
-  ]),
+  roleMiddleware([ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE, ROLES.RECEPTIONIST, ROLES.PHARMACIST]),
   async (req, res) => {
     try {
       const appointments = await Appointment.find()
-        .populate("patientId", "name patientCode") // ✅ include patientCode
-        .populate("staffId", "name staffCode")     // ✅ include staffCode
+        .populate("patientId", "name patientCode")
+        .populate("staffId", "name staffCode")
         .sort({ appointmentDate: 1 });
 
-      res.json(appointments);
+      res.json(appointments.map(a => ({
+        id: a._id,
+        appointmentCode: a.appointmentCode,
+        patient: a.patientId,
+        staff: a.staffId,
+        appointmentDate: a.appointmentDate,
+        reason: a.reason,
+        notes: a.notes,
+        status: a.status,
+        createdAt: a.createdAt,
+        updatedAt: a.updatedAt,
+      })));
     } catch (err) {
       console.error("Error fetching appointments:", err);
       res.status(500).json({ error: err.message });
@@ -35,41 +40,50 @@ router.get(
 );
 
 // ================== CREATE appointment ==================
-// Allowed: Admin, Doctor, Receptionist
 router.post(
   "/",
   authMiddleware,
   roleMiddleware([ROLES.ADMIN, ROLES.DOCTOR, ROLES.RECEPTIONIST]),
   async (req, res) => {
-    const { patientId, staffId, appointmentDate, reason, status, notes } = req.body;
-
-    if (!patientId || !staffId || !appointmentDate) {
-      return res.status(400).json({
-        error: "Patient, staff, and appointment date are required",
-      });
-    }
-
     try {
-      // ✅ Generate human-friendly appointment code
+      const { patientId, staffId, appointmentDate, reason, status, notes } = req.body;
+
+      if (!patientId || !staffId || !appointmentDate) {
+        return res.status(400).json({
+          error: "Patient, staff, and appointment date are required",
+        });
+      }
+
       const appointmentCode = "APT-" + shortid.generate().toUpperCase();
 
-      const newAppointment = new Appointment({
+      const appointment = new Appointment({
         patientId,
         staffId,
         appointmentDate,
         reason: reason || "",
         notes: notes || "",
         status: status || "Pending",
-        appointmentCode, // ✅ added
+        appointmentCode,
       });
 
-      const saved = await newAppointment.save();
+      const saved = await appointment.save();
 
       const populated = await Appointment.findById(saved._id)
-        .populate("patientId", "name patientCode") // ✅ include patientCode
-        .populate("staffId", "name staffCode");   // ✅ include staffCode
+        .populate("patientId", "name patientCode")
+        .populate("staffId", "name staffCode");
 
-      res.status(201).json(populated);
+      res.status(201).json({
+        id: populated._id,
+        appointmentCode: populated.appointmentCode,
+        patient: populated.patientId,
+        staff: populated.staffId,
+        appointmentDate: populated.appointmentDate,
+        reason: populated.reason,
+        notes: populated.notes,
+        status: populated.status,
+        createdAt: populated.createdAt,
+        updatedAt: populated.updatedAt,
+      });
     } catch (err) {
       console.error("Error creating appointment:", err);
       res.status(400).json({ error: err.message });
@@ -78,7 +92,6 @@ router.post(
 );
 
 // ================== UPDATE appointment ==================
-// Allowed: Admin, Doctor, Receptionist
 router.put(
   "/:id",
   authMiddleware,
@@ -90,14 +103,25 @@ router.put(
         req.body,
         { new: true, runValidators: true }
       )
-        .populate("patientId", "name patientCode") // ✅ include patientCode
-        .populate("staffId", "name staffCode");   // ✅ include staffCode
+        .populate("patientId", "name patientCode")
+        .populate("staffId", "name staffCode");
 
       if (!updated) {
         return res.status(404).json({ error: "Appointment not found" });
       }
 
-      res.json(updated);
+      res.json({
+        id: updated._id,
+        appointmentCode: updated.appointmentCode,
+        patient: updated.patientId,
+        staff: updated.staffId,
+        appointmentDate: updated.appointmentDate,
+        reason: updated.reason,
+        notes: updated.notes,
+        status: updated.status,
+        createdAt: updated.createdAt,
+        updatedAt: updated.updatedAt,
+      });
     } catch (err) {
       console.error("Error updating appointment:", err);
       res.status(400).json({ error: err.message });
@@ -106,7 +130,6 @@ router.put(
 );
 
 // ================== DELETE appointment ==================
-// Allowed: Admin only
 router.delete(
   "/:id",
   authMiddleware,
@@ -117,7 +140,11 @@ router.delete(
       if (!deleted) {
         return res.status(404).json({ error: "Appointment not found" });
       }
-      res.json({ message: "Appointment deleted successfully" });
+
+      res.json({
+        message: "Appointment deleted successfully",
+        appointmentId: deleted._id,
+      });
     } catch (err) {
       console.error("Error deleting appointment:", err);
       res.status(500).json({ error: err.message });

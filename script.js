@@ -613,23 +613,24 @@ async function deleteAppointment(id) {
 // ================= STAFF =================
 async function fetchStaff() {
   try {
-    const res = await fetch(staffURL);
+    const res = await apiFetch(staffURL);
     const data = await res.json();
     const tbody = document.getElementById("staffTable");
     tbody.innerHTML = "";
     data.forEach((s) => {
       const hired = s.hiredDate ? formatDateISO(s.hiredDate) : "";
       const tr = document.createElement("tr");
-      tr.innerHTML = `<td>${s._id}</td>
+      tr.innerHTML = `
+        <td>${s.staffCode || ""}</td>
         <td><input type="text" id="sName-${s._id}" value="${s.name || ""}"></td>
         <td><input type="text" id="sRole-${s._id}" value="${s.role || ""}"></td>
-        <td><input type="email" id="sEmail-${s._id}" value="${s.email || ""}"></td>
-        <td><input type="text" id="sQualifications-${s._id}" value="${s.qualifications || ""}"></td>
-        <td><input type="date" id="sHiredDate-${s._id}" value="${hired}"></td>
-        <td><input type="tel" id="sPhone-${s._id}" value="${s.phone || ""}"></td>
+        <td><input type="text" id="sUsername-${s._id}" value="${s.username || ""}"></td>
+        <td>${s.failedLogins >= 5 ? "<span style='color:red'>Locked</span>" : "Active"}</td>
         <td>
           <button onclick="editStaff('${s._id}')">Save</button>
           <button onclick="deleteStaff('${s._id}')">Delete</button>
+          <button onclick="openResetPasswordModal('${s._id}')">Reset Password</button>
+          <button onclick="unlockStaff('${s._id}')">Unlock</button>
         </td>`;
       tbody.appendChild(tr);
     });
@@ -641,83 +642,74 @@ async function fetchStaff() {
   }
 }
 
-async function addStaff() {
-  const name = document.getElementById("sName").value.trim();
-  const role = document.getElementById("sRole").value.trim();
-  const department = document.getElementById("sDepartment").value.trim();
-  const email = document.getElementById("sEmail").value.trim();
-  const phone = document.getElementById("sPhone").value.trim();
-  const qualifications = document.getElementById("sQualifications").value.trim();
-  const hiredDate = document.getElementById("sHiredDate").value;
-  const password = document.getElementById("sPassword").value.trim(); // ✅ added password
-  if (!name || !role || !password) {
-    alert("Fill name, role and password");
+// ================= Reset Password =================
+function openResetPasswordModal(staffId) {
+  let modal = document.getElementById("resetPasswordModal");
+  if (!modal) {
+    modal = document.createElement("div");
+    modal.id = "resetPasswordModal";
+    modal.className = "modal";
+    modal.innerHTML = `
+      <div class="modal-content">
+        <span class="close" onclick="closeResetPasswordModal()">&times;</span>
+        <h3>Reset Password</h3>
+        <input type="hidden" id="resetStaffId" />
+        <div class="input-group">
+          <label>New Password</label>
+          <input type="password" id="newPassword" />
+        </div>
+        <div style="margin-top:12px;">
+          <button class="btn" onclick="submitPasswordReset()">Update</button>
+          <button class="btn" onclick="closeResetPasswordModal()">Cancel</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+  }
+  document.getElementById("resetStaffId").value = staffId;
+  modal.classList.remove("hidden");
+}
+
+function closeResetPasswordModal() {
+  document.getElementById("resetPasswordModal")?.classList.add("hidden");
+}
+
+async function submitPasswordReset() {
+  const staffId = document.getElementById("resetStaffId").value;
+  const newPassword = document.getElementById("newPassword").value.trim();
+  if (!newPassword) {
+    alert("Enter a new password");
     return;
   }
   try {
-    await fetch(staffURL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name,
-        role,
-        department,
-        email,
-        phone,
-        qualifications,
-        hiredDate,
-        password, // ✅ send to backend
-      }),
-    });
-    document.getElementById("sName").value = "";
-    document.getElementById("sRole").value = "";
-    document.getElementById("sDepartment").value = "";
-    document.getElementById("sEmail").value = "";
-    document.getElementById("sPhone").value = "";
-    document.getElementById("sQualifications").value = "";
-    document.getElementById("sHiredDate").value = "";
-    document.getElementById("sPassword").value = ""; // clear password
-    fetchStaff();
-  } catch (e) {
-    console.error(e);
-  }
-}
-
-async function editStaff(id) {
-  const name = document.getElementById(`sName-${id}`).value;
-  const role = document.getElementById(`sRole-${id}`).value;
-  const email = document.getElementById(`sEmail-${id}`).value;
-  const qualifications = document.getElementById(`sQualifications-${id}`).value;
-  const hiredDate = document.getElementById(`sHiredDate-${id}`).value;
-  const phone = document.getElementById(`sPhone-${id}`).value;
-  try {
-    await fetch(`${staffURL}/${id}`, {
+    const res = await apiFetch(`${staffURL}/${staffId}/reset-password`, {
       method: "PUT",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name,
-        role,
-        email,
-        qualifications,
-        hiredDate,
-        phone,
-      }),
+      body: JSON.stringify({ password: newPassword })
     });
-    fetchStaff();
+    closeResetPasswordModal();
+    flash("Password reset successfully");
   } catch (e) {
     console.error(e);
+    alert(e.message || "Password reset failed");
   }
 }
 
-async function deleteStaff(id) {
-  if (!confirm("Delete staff?")) return;
+// ================= Unlock Staff (reset failed logins) =================
+async function unlockStaff(staffId) {
+  if (!confirm("Unlock this account?")) return;
   try {
-    await fetch(`${staffURL}/${id}`, { method: "DELETE" });
-    fetchStaff();
+    await apiFetch(`${staffURL}/${staffId}/reset-failed-logins`, {
+      method: "PUT"
+    });
+    flash("Account unlocked successfully");
+    fetchStaff(); // refresh table
   } catch (e) {
     console.error(e);
+    alert(e.message || "Failed to unlock account");
   }
 }
+
+
 
 // ================= INVENTORY =================
 // ================= INVENTORY =================
@@ -1137,4 +1129,24 @@ async function administerMedicine() {
     console.error(e);
     alert("Error administering medicine");
   }
+}
+ // ================= LOGOUT =================
+function logout() {
+  // ✅ clear local session/token if you’re storing one
+  localStorage.removeItem("token");
+  sessionStorage.removeItem("token");
+
+  // ✅ hide dashboard, show login form
+  document.getElementById("dashboardContainer").classList.add("hidden");
+  loginForm.classList.remove("hidden");
+
+  // ✅ optional: clear admin name
+  document.getElementById("adminName").innerText = "";
+
+  // ✅ optional backend logout call
+  fetch(`${base}/api/auth/logout`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    credentials: "include", // only if using cookies
+  }).catch((err) => console.warn("Logout request failed:", err));
 }

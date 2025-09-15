@@ -1504,4 +1504,127 @@ td button:nth-child(2) { background-color: #e74a3b; color: #fff; } /* Delete */
   background-color: #2e59d9;
 }
 
+/* ================= MODAL ================= */
+.modal {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 2000;
+}
+
+.modal.hidden {
+  display: none;
+}
+
+.modal-content {
+  background: #fff;
+  padding: 20px 25px;
+  border-radius: 12px;
+  width: 350px;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+  position: relative;
+  animation: fadeIn 0.3s ease-in-out;
+}
+
+.modal-content h3 {
+  margin-bottom: 15px;
+  font-size: 18px;
+  font-weight: 600;
+  text-align: center;
+  color: #333;
+}
+
+.modal-content .input-group {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 12px;
+}
+
+.modal-content .input-group label {
+  font-size: 14px;
+  margin-bottom: 6px;
+  font-weight: 500;
+  color: #444;
+}
+
+.modal-content .input-group input {
+  padding: 8px 10px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
+  font-size: 14px;
+}
+
+.modal-content .btn {
+  padding: 8px 14px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  margin-right: 8px;
+  font-size: 14px;
+  transition: 0.2s ease-in-out;
+}
+
+.modal-content .btn:first-child {
+  background: #2563eb;
+  color: #fff;
+}
+
+.modal-content .btn:first-child:hover {
+  background: #1d4ed8;
+}
+
+.modal-content .btn:last-child {
+  background: #e5e7eb;
+  color: #333;
+}
+
+.modal-content .btn:last-child:hover {
+  background: #d1d5db;
+}
+
+/* Close button */
+.modal-content .close {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  font-size: 20px;
+  cursor: pointer;
+  color: #666;
+}
+
+.modal-content .close:hover {
+  color: #000;
+}
+
+/* Fade animation */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+/* ================= STAFF TABLE BUTTONS ================= */
+#staffTable button {
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 13px;
+  margin-right: 5px;
+  cursor: pointer;
+  transition: 0.2s;
+  border: none;
+}
+
+#staffTable button:nth-child(1) { background: #22c55e; color: white; } /* Save */
+#staffTable button:nth-child(1):hover { background: #16a34a; }
+
+#staffTable button:nth-child(2) { background: #ef4444; color: white; } /* Delete */
+#staffTable button:nth-child(2):hover { background: #dc2626; }
+
+#staffTable button:nth-child(3) { background: #2563eb; color: white; } /* Reset Password */
+#staffTable button:nth-child(3):hover { background: #1d4ed8; }
+
+#staffTable button:nth-child(4) { background: #facc15; color: #333; } /* Unlock */
+#staffTable button:nth-child(4):hover { background: #eab308; }
 
