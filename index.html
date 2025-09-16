@@ -597,6 +597,107 @@
           </div>
         </div>
 
+        <!-- ================== PRESCRIPTIONS SECTION ================== -->
+        <div id="prescriptionsSection" class="hidden">
+          <h2>Prescriptions</h2>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Patient</th>
+                  <th>Medicine</th>
+                  <th>Dosage</th>
+                  <th>Prescribed By</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="prescriptionsTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ================== BILLING SECTION ================== -->
+        <div id="billingSection" class="hidden">
+          <h2>Billing</h2>
+          <div class="form-container">
+            <div class="form-grid">
+              <div class="input-group">
+                <label for="billPatient">Patient</label>
+                <input
+                  type="text"
+                  id="billPatient"
+                  placeholder="Patient Name"
+                />
+              </div>
+              <div class="input-group">
+                <label for="billAmount">Amount</label>
+                <input type="number" id="billAmount" placeholder="Amount" />
+              </div>
+              <div class="input-group">
+                <label for="billStatus">Status</label>
+                <select id="billStatus">
+                  <option value="Unpaid">Unpaid</option>
+                  <option value="Paid">Paid</option>
+                  <option value="Pending">Pending</option>
+                </select>
+              </div>
+            </div>
+            <button onclick="addBill()">Add Bill</button>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Patient</th>
+                  <th>Amount</th>
+                  <th>Status</th>
+                  <th>Date</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody id="billingTable"></tbody>
+            </table>
+          </div>
+        </div>
+
+        <!-- ================== LAB REPORTS SECTION ================== -->
+        <div id="labReportsSection" class="hidden">
+          <h2>Lab Reports</h2>
+          <div class="form-container">
+            <div class="form-grid">
+              <div class="input-group">
+                <label for="labPatient">Patient</label>
+                <input type="text" id="labPatient" placeholder="Patient Name" />
+              </div>
+              <div class="input-group">
+                <label for="labTest">Test</label>
+                <input type="text" id="labTest" placeholder="Test Name" />
+              </div>
+              <div class="input-group">
+                <label for="labResult">Result</label>
+                <input type="text" id="labResult" placeholder="Result" />
+              </div>
+            </div>
+            <button onclick="addLabReport()">Add Report</button>
+          </div>
+          <div class="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Patient</th>
+                  <th>Test</th>
+                  <th>Result</th>
+                  <th>Date</th>
+                </tr>
+              </thead>
+              <tbody id="labReportsTable"></tbody>
+            </table>
+          </div>
+        </div>
+
         <!-- Reports Section -->
         <div id="reportsSection" class="hidden">
           <div class="form-container">
@@ -615,6 +716,10 @@
         <a href="tel:+254723562484"> SarahDevs</a>
       </p>
     </div>
-    <script src="script.js"></script>
+    <script src="js/script.js" type="module">
+      import { initLogin, updatePassword } from './auth.js';
+      initLogin();
+      window.updatePassword = updatePassword; // needed for inline onclick
+    </script>
   </body>
 </html>
