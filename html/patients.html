@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Patients</title>
+
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Font Awesome -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+
+    <!-- LOCAL CSS -->
+    <link rel="stylesheet" href="../css/style.css" />
+
+    <!-- Auth Guard -->
+    <script type="module">
+      import { requireAuth } from "../js/auth.js";
+      requireAuth();
+    </script>
+
+    <style>
+      /* Back button styling */
+      #backToDashboardBtn {
+        background: linear-gradient(135deg, #2b6cb0, #3182ce);
+        color: #fff;
+        border: none;
+        padding: 10px 18px;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 8px;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.15);
+        transition: all 0.2s ease-in-out;
+      }
+      #backToDashboardBtn:hover {
+        background: linear-gradient(135deg, #2c5282, #2b6cb0);
+        transform: translateY(-2px);
+      }
+      #backToDashboardBtn i {
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <!-- ================== PATIENTS SECTION ================== -->
+    <div id="patientsSection" class="hidden">
+      <!-- Dashboard Summary -->
+      <div class="dashboard-summary">
+        <div class="card">
+          <h3>Total Patients</h3>
+          <p id="totalPatients">0</p>
+        </div>
+        <!-- Back to Dashboard -->
+        <div style="margin-left: auto">
+          <button id="backToDashboardBtn">
+            <i class="fa fa-arrow-left"></i> Return to Dashboard
+          </button>
+        </div>
+      </div>
+
+      <!-- Add Patient Form -->
+      <div class="form-container">
+        <h2>Add Patient</h2>
+        <div class="form-grid">
+          <div class="input-group">
+            <label for="pName">Name</label>
+            <input type="text" id="pName" placeholder="Patient Name" />
+          </div>
+          <div class="input-group">
+            <label for="pAge">Age</label>
+            <input type="number" id="pAge" placeholder="Age" />
+          </div>
+          <div class="input-group">
+            <label for="pGender">Gender</label>
+            <select name="gender" id="pGender">
+              <option value="">Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Rather Not Say">Rather Not Say</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label for="pEmail">Email</label>
+            <input type="email" id="pEmail" placeholder="Email" />
+          </div>
+          <div class="input-group">
+            <label for="pPhone">Phone</label>
+            <input type="tel" id="pPhone" placeholder="Phone Number" />
+          </div>
+          <div class="input-group">
+            <label for="pNationalId">National ID</label>
+            <input type="number" id="pNationalId" placeholder="National ID" />
+          </div>
+          <div class="input-group">
+            <label for="pAilment">Ailment</label>
+            <input type="text" id="pAilment" placeholder="Ailment" />
+          </div>
+        </div>
+        <button id="addPatientBtn">Add Patient</button>
+      </div>
+
+      <!-- Search / Filter -->
+      <div class="search-container">
+        <input
+          type="text"
+          id="searchPatient"
+          placeholder="Search by name, phone, or ailment..."
+        />
+      </div>
+
+      <!-- Patients Table -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Age</th>
+              <th>Ailment</th>
+              <th>Date Admitted</th>
+              <th>Phone</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="patientsTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ================== PATIENT MODALS ================== -->
+    <div id="patientModal" class="modal hidden">
+      <div class="modal-content">
+        <span
+          class="close"
+          onclick="document.getElementById('patientModal').classList.add('hidden')"
+          >&times;</span
+        >
+        <h3>Patient Details</h3>
+        <p><strong>Name:</strong> <span id="modalName"></span></p>
+        <p><strong>Age:</strong> <span id="modalAge"></span></p>
+        <p><strong>Gender:</strong> <span id="modalGender"></span></p>
+        <p><strong>Email:</strong> <span id="modalEmail"></span></p>
+        <p><strong>Phone:</strong> <span id="modalPhone"></span></p>
+        <p><strong>National ID:</strong> <span id="modalNationalId"></span></p>
+        <p><strong>Ailment:</strong> <span id="modalAilment"></span></p>
+        <p>
+          <strong>Date Admitted:</strong> <span id="modalDateAdmitted"></span>
+        </p>
+        <hr />
+        <h4>History & Previous Data</h4>
+        <div>
+          <h5>Appointments</h5>
+          <div id="modalPrevAppointments"></div>
+        </div>
+        <div>
+          <h5>Bills</h5>
+          <div id="modalBills"></div>
+        </div>
+        <div>
+          <h5>Prescriptions</h5>
+          <div id="modalPrescriptions"></div>
+        </div>
+        <div class="modal-actions" style="margin-top: 15px">
+          <button class="btn small print-history">🖨 Print History</button>
+          <button class="btn small export-bills">⬇ Export Bills (CSV)</button>
+          <button class="btn small schedule-appt">
+            📅 Schedule Appointment
+          </button>
+          <button
+            class="btn small"
+            onclick="document.getElementById('patientModal').classList.add('hidden')"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="editPatientModal" class="modal hidden">
+      <div class="modal-content">
+        <span
+          class="close"
+          onclick="document.getElementById('editPatientModal').classList.add('hidden')"
+          >&times;</span
+        >
+        <h3>Edit Patient</h3>
+        <div class="form-grid">
+          <div class="input-group">
+            <label for="editName">Name</label>
+            <input type="text" id="editName" placeholder="Patient Name" />
+          </div>
+          <div class="input-group">
+            <label for="editAge">Age</label>
+            <input type="number" id="editAge" placeholder="Age" />
+          </div>
+          <div class="input-group">
+            <label for="editGender">Gender</label>
+            <select id="editGender">
+              <option value="">Gender</option>
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+              <option value="Rather Not Say">Rather Not Say</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label for="editAilment">Ailment</label>
+            <input type="text" id="editAilment" placeholder="Ailment" />
+          </div>
+        </div>
+        <div style="margin-top: 15px">
+          <button class="btn small" id="saveEditBtn">Save Changes</button>
+          <button
+            class="btn small"
+            onclick="document.getElementById('editPatientModal').classList.add('hidden')"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div id="scheduleApptModal" class="modal hidden">
+      <div class="modal-content">
+        <span
+          class="close"
+          onclick="document.getElementById('scheduleApptModal').classList.add('hidden')"
+          >&times;</span
+        >
+        <h3>Schedule Appointment</h3>
+        <input type="datetime-local" id="apptDate" />
+        <input type="text" id="apptReason" placeholder="Reason" />
+        <button id="saveApptBtn">Save Appointment</button>
+      </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+      <p>&copy;2025 Lunar Cancer Care. All Rights Reserved</p>
+      <p>
+        Software crafted with <span style="color: red">&#10084;</span> by
+        <a href="tel:+254723562484">SarahDevs</a>
+      </p>
+    </div>
+
+    <!-- MODULE SCRIPTS -->
+    <script type="module" src="../js/helpers.js"></script>
+    <script type="module" src="../js/navigation.js"></script>
+    <script type="module" src="../js/modals.js"></script>
+    <script type="module" src="../js/auth.js"></script>
+    <script type="module">
+      import { initPatientsPage } from "../js/patients.js";
+
+      // Initialize Patients Page
+      if (localStorage.getItem("authToken")) {
+        document.getElementById("patientsSection")?.classList.remove("hidden");
+        initPatientsPage();
+      }
+
+      // Back button
+      document
+        .getElementById("backToDashboardBtn")
+        ?.addEventListener("click", () => {
+          window.location.href = "dashboard.html";
+        });
+    </script>
+  </body>
+</html>

@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../css/style.css" />
+  </head>
+  <body>
+    <!-- Staff Section -->
+
+    <div id="staffSection" class="hidden">
+      <!-- Add Staff Form -->
+      <div class="form-container">
+        <h2>Add Staff</h2>
+        <div class="form-grid">
+          <div class="input-group">
+            <label for="sName">Name</label>
+            <input type="text" id="sName" placeholder="Staff Name" />
+          </div>
+          <div class="input-group">
+            <label for="sRole">Role</label>
+            <select id="sRole">
+              <option value="">Select Role</option>
+              <option value="Doctor">Doctor</option>
+              <option value="Nurse">Nurse</option>
+              <option value="Pharmacist">Pharmacist</option>
+              <option value="Receptionist">Receptionist</option>
+              <option value="Admin">Admin</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label for="sDepartment">Department</label>
+            <input type="text" id="sDepartment" placeholder="Department" />
+          </div>
+          <div class="input-group">
+            <label for="sEmail">Email</label>
+            <input type="email" id="sEmail" placeholder="Email" />
+          </div>
+          <div class="input-group">
+            <label for="sPhone">Phone</label>
+            <input type="tel" id="sPhone" placeholder="Phone" />
+          </div>
+          <div class="input-group">
+            <label for="sQualifications">Qualifications</label>
+            <input
+              type="text"
+              id="sQualifications"
+              placeholder="Qualifications"
+            />
+          </div>
+          <div class="input-group">
+            <label for="sHiredDate">Hired Date</label>
+            <input type="date" id="sHiredDate" />
+          </div>
+          <div class="input-group">
+            <label for="sShift">Shift Status</label>
+            <select id="sShift">
+              <option value="On Duty">On Duty</option>
+              <option value="Off Duty">Off Duty</option>
+              <option value="Leave">Leave</option>
+            </select>
+          </div>
+          <div class="input-group">
+            <label for="sUsername">Username</label>
+            <input type="text" id="sUsername" placeholder="Username" required />
+          </div>
+          <div class="input-group">
+            <label for="sPassword">Password</label>
+            <input
+              type="password"
+              id="sPassword"
+              placeholder="Password"
+              required
+            />
+          </div>
+        </div>
+        <button onclick="addStaff()">Add Staff</button>
+      </div>
+
+      <!-- Search / Filter -->
+      <div class="search-container">
+        <input
+          type="text"
+          id="searchStaff"
+          placeholder="Search staff by name, role, or department..."
+          onkeyup="filterStaff()"
+        />
+        <button onclick="exportStaffCSV()">Export CSV</button>
+        <button onclick="printStaffList()">Print</button>
+      </div>
+
+      <!-- Staff Table -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Name</th>
+              <th>Role</th>
+              <th>Department</th>
+              <th>Email</th>
+              <th>Phone</th>
+              <th>Qualifications</th>
+              <th>Hired Date</th>
+              <th>Shift</th>
+              <th>Username</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="staffTable"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Staff Modal -->
+    <div id="staffModal" class="modal hidden">
+      <div class="modal-content">
+        <span class="close" onclick="closeStaffModal()">&times;</span>
+        <h3>Staff Details</h3>
+        <p><strong>Name:</strong> <span id="modalStaffName"></span></p>
+        <p><strong>Role:</strong> <span id="modalStaffRole"></span></p>
+        <p>
+          <strong>Department:</strong>
+          <span id="modalStaffDepartment"></span>
+        </p>
+        <p><strong>Email:</strong> <span id="modalStaffEmail"></span></p>
+        <p><strong>Phone:</strong> <span id="modalStaffPhone"></span></p>
+        <p>
+          <strong>Qualifications:</strong>
+          <span id="modalStaffQualifications"></span>
+        </p>
+        <p>
+          <strong>Hired Date:</strong>
+          <span id="modalStaffHiredDate"></span>
+        </p>
+        <p><strong>Shift:</strong> <span id="modalStaffShift"></span></p>
+        <hr />
+        <h4>Workload & Assignments</h4>
+        <p>
+          <strong>Patients Attended:</strong>
+          <span id="modalStaffPatients"></span>
+        </p>
+        <p>
+          <strong>Appointments:</strong>
+          <span id="modalStaffAppointments"></span>
+        </p>
+        <button onclick="assignStaff()">Assign Patient</button>
+        <button onclick="printStaffProfile()">Print / Download</button>
+      </div>
+    </div>
+
+    <!-- Administer medicine -->
+    <section class="administer-medicine">
+      <h3>Administer Medicine</h3>
+      <div>
+        <label>Patient Name:</label>
+        <input type="text" id="patientName" />
+      </div>
+      <div>
+        <label>Medicine:</label>
+        <select id="medicineSelect">
+          <!-- Options populated dynamically -->
+        </select>
+      </div>
+      <div>
+        <label>Quantity:</label>
+        <input type="number" id="quantityUsed" />
+      </div>
+      <button onclick="administerMedicine()">Administer</button>
+    </section>
+    <!-- Footer -->
+    <div class="footer">
+      <p>&copy;2025 Lunar Cancer Care. All Rights Reserved</p>
+      <p>
+        Software crafted with <span style="color: red">&#10084;</span> by
+        <a href="tel:+254723562484"> SarahDevs</a>
+      </p>
+    </div>
+    <script type="module" src="../js/staff.js"></script>
+    <script type="module" src="../js/helpers.js"></script>
+    <script type="module" src="../js/navigation.js"></script>
+    <script type="module" src="../js/modals.js"></script>
+    <script type="module" src="../js/auth.js"></script>
+  </body>
+</html>

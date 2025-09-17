@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <!-- ================== LAB REPORTS SECTION ================== -->
+    <div id="labReportsSection" class="hidden">
+      <h2>Lab Reports</h2>
+
+      <!-- Add / Edit Lab Report Form -->
+      <div class="form-container">
+        <h3>Add Lab Report</h3>
+        <div class="form-grid">
+          <div class="input-group">
+            <label for="labPatient">Patient</label>
+            <input type="text" id="labPatient" placeholder="Patient Name" />
+          </div>
+          <div class="input-group">
+            <label for="labTest">Test Name</label>
+            <input type="text" id="labTest" placeholder="Test Name" />
+          </div>
+          <div class="input-group">
+            <label for="labResult">Result</label>
+            <input type="text" id="labResult" placeholder="Result" />
+          </div>
+          <div class="input-group">
+            <label for="labUnit">Unit</label>
+            <input type="text" id="labUnit" placeholder="Optional unit" />
+          </div>
+          <div class="input-group">
+            <label for="labReference">Reference Range</label>
+            <input
+              type="text"
+              id="labReference"
+              placeholder="Optional reference range"
+            />
+          </div>
+        </div>
+        <button onclick="addLabReport()">Add / Update Report</button>
+      </div>
+
+      <!-- Search & Export -->
+      <div class="search-container">
+        <input
+          type="text"
+          id="searchLabReports"
+          placeholder="Search by patient, test, or result..."
+          onkeyup="filterLabReports()"
+        />
+        <button onclick="exportLabReportsCSV()">Export CSV</button>
+        <button onclick="printLabReports()">Print</button>
+      </div>
+
+      <!-- Lab Reports Table -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Lab Code</th>
+              <th>Patient</th>
+              <th>Test Name</th>
+              <th>Result</th>
+              <th>Unit</th>
+              <th>Reference</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="labReportsTable"></tbody>
+        </table>
+      </div>
+
+      <!-- Modal for Lab Report Details -->
+      <div id="labModal" class="modal hidden">
+        <div class="modal-content">
+          <span class="close" onclick="closeLabModal()">&times;</span>
+          <h3>Lab Report Details</h3>
+          <p><strong>Lab Code:</strong> <span id="modalLabCode"></span></p>
+          <p><strong>Patient:</strong> <span id="modalLabPatient"></span></p>
+          <p><strong>Test Name:</strong> <span id="modalLabTest"></span></p>
+          <p><strong>Result:</strong> <span id="modalLabResult"></span></p>
+          <p><strong>Unit:</strong> <span id="modalLabUnit"></span></p>
+          <p>
+            <strong>Reference Range:</strong>
+            <span id="modalLabReference"></span>
+          </p>
+          <p><strong>Date:</strong> <span id="modalLabDate"></span></p>
+          <button onclick="editLabReportModal()">Edit</button>
+          <button onclick="deleteLabReportModal()">Delete</button>
+          <button onclick="printLabReport()">Print / Download</button>
+        </div>
+      </div>
+    </div>
+    <!-- Footer -->
+    <div class="footer">
+      <p>&copy;2025 Lunar Cancer Care. All Rights Reserved</p>
+      <p>
+        Software crafted with <span style="color: red">&#10084;</span> by
+        <a href="tel:+254723562484"> SarahDevs</a>
+      </p>
+    </div>
+    <script type="module" src="../js/labReports.js"></script>
+    <script type="module" src="../js/helpers.js"></script>
+    <script type="module" src="../js/navigation.js"></script>
+    <script type="module" src="../js/modals.js"></script>
+    <script type="module" src="../js/auth.js"></script>
+  </body>
+</html>

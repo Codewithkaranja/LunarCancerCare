@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HMIS Dashboard</title>
+
+    <!-- Font Awesome & CSS -->
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../css/style.css" />
+
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+    <!-- Auth Guard -->
+    <script type="module">
+      import { requireAuth } from "../js/auth.js";
+      requireAuth(); // redirect if not logged in
+    </script>
+  </head>
+  <body>
+    <div class="container hidden" id="dashboardContainer">
+      <!-- Sidebar -->
+      <div class="sidebar">
+        <h2><span>HMIS</span></h2>
+        <nav id="sidebarNav"></nav>
+      </div>
+
+      <!-- Main Content -->
+      <div class="main">
+        <div class="header">
+          <h1>Dashboard</h1>
+          <div class="user">
+            <img src="https://i.pravatar.cc/40" alt="User" />
+            <span id="adminName">Admin</span>
+            <button id="logoutBtn" class="logout-btn">
+              <i class="fa-solid fa-right-from-bracket"></i> Logout
+            </button>
+          </div>
+        </div>
+
+        <!-- Dashboard Section -->
+        <section id="dashboardSection" class="section active">
+          <div class="cards">
+            <div class="card">
+              <div>
+                <h3>Total Patients</h3>
+                <p id="totalPatients">0</p>
+              </div>
+              <i class="fa fa-user-injured"></i>
+            </div>
+            <div class="card">
+              <div>
+                <h3>Appointments Today</h3>
+                <p id="appointmentsToday">0</p>
+              </div>
+              <i class="fa fa-calendar-check"></i>
+            </div>
+            <div class="card">
+              <div>
+                <h3>Staff Members</h3>
+                <p id="staffCount">0</p>
+              </div>
+              <i class="fa fa-user-md"></i>
+            </div>
+            <div class="card">
+              <div>
+                <h3>Reports</h3>
+                <p id="reportsCount">0</p>
+              </div>
+              <i class="fa fa-file-alt"></i>
+            </div>
+          </div>
+
+          <div class="charts">
+            <div class="chart-container">
+              <h3>Patient Age Distribution</h3>
+              <canvas id="ageChart"></canvas>
+            </div>
+            <div class="chart-container">
+              <h3>Appointments Trend</h3>
+              <canvas id="appointmentsChart"></canvas>
+            </div>
+          </div>
+        </section>
+
+        <!-- Footer -->
+        <div class="footer">
+          <p>&copy;2025 Lunar Cancer Care. All Rights Reserved</p>
+          <p>
+            Software crafted with <span style="color: red">&#10084;</span> by
+            <a href="tel:+254723562484">SarahDevs</a>
+          </p>
+        </div>
+      </div>
+    </div>
+
+    <!-- JS Scripts -->
+    <script type="module" src="../js/main.js"></script>
+    <script type="module" src="../js/charts.js"></script>
+    <script type="module" src="../js/helpers.js"></script>
+    <script type="module" src="../js/modals.js"></script>
+
+    <!-- Auth + Sidebar + Logout Binding -->
+    <script type="module">
+      import { logout, getUser } from "../js/auth.js";
+
+      // Show dashboard container
+      document.getElementById("dashboardContainer")?.classList.remove("hidden");
+
+      // Bind logout
+      document
+        .getElementById("logoutBtn")
+        ?.addEventListener("click", () => logout());
+
+      // Show logged-in username
+      const user = getUser();
+      if (user?.username)
+        document.getElementById("adminName").textContent = user.username;
+
+      // Build sidebar navigation with links
+      const sidebarNav = document.getElementById("sidebarNav");
+      sidebarNav.innerHTML = `
+        <ul>
+          <li><a href="dashboard.html"><i class="fa-solid fa-chart-line"></i> Dashboard</a></li>
+          <li><a href="patients.html"><i class="fa-solid fa-user-injured"></i> Patients</a></li>
+          <li><a href="appointments.html"><i class="fa-solid fa-calendar-check"></i> Appointments</a></li>
+          <li><a href="staff.html"><i class="fa-solid fa-user-md"></i> Staff</a></li>
+          <li><a href="inventory.html"><i class="fa-solid fa-pills"></i> Inventory</a></li>
+          <li><a href="bills.html"><i class="fa-solid fa-file-invoice-dollar"></i> Bills</a></li>
+          <li><a href="prescriptions.html"><i class="fa-solid fa-prescription-bottle-medical"></i> Prescriptions</a></li>
+          <li><a href="labReports.html"><i class="fa-solid fa-vials"></i> Lab Reports</a></li>
+          <li><a href="reports.html"><i class="fa-solid fa-file-alt"></i> Reports</a></li>
+        </ul>
+      `;
+    </script>
+
+    <style>
+      /* Logout Button Styling (Header Position) */
+      .user {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+      }
+
+      .logout-btn {
+        padding: 8px 14px;
+        border: none;
+        border-radius: 6px;
+        background: #e74c3c;
+        color: #fff;
+        font-size: 14px;
+        font-weight: bold;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        transition: background 0.3s ease, transform 0.2s ease;
+      }
+
+      .logout-btn:hover {
+        background: #c0392b;
+        transform: scale(1.05);
+      }
+    </style>
+  </body>
+</html>

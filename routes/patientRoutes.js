@@ -2,8 +2,7 @@
 const express = require("express");
 const router = express.Router();
 const Patient = require("../models/Patient");
-const { authMiddleware } = require("../middleware/authMiddleware");
-const roleMiddleware = require("../middleware/roleMiddleware");
+const { authMiddleware, requireRole } = require("../middleware/authMiddleware");
 const ROLES = require("../config/roles");
 
 // ================== Helper: Generate sequential patient code ==================
@@ -16,7 +15,7 @@ const generatePatientCode = async () => {
 router.get(
   "/",
   authMiddleware,
-  roleMiddleware([ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE, ROLES.RECEPTIONIST]),
+  requireRole([ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE, ROLES.RECEPTIONIST]),
   async (req, res) => {
     try {
       const patients = await Patient.find().sort({ createdAt: -1 });
@@ -42,7 +41,7 @@ router.get(
       );
     } catch (err) {
       console.error("Error fetching patients:", err);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: "Failed to fetch patients" });
     }
   }
 );
@@ -51,7 +50,7 @@ router.get(
 router.post(
   "/",
   authMiddleware,
-  roleMiddleware([ROLES.ADMIN, ROLES.DOCTOR, ROLES.RECEPTIONIST]),
+  requireRole([ROLES.ADMIN, ROLES.DOCTOR, ROLES.RECEPTIONIST]),
   async (req, res) => {
     try {
       const { name, age, gender, email, phone, nationalId, ailment, admissionDate } = req.body;
@@ -60,7 +59,13 @@ router.post(
         return res.status(400).json({ error: "Name, age, gender, and ailment are required" });
       }
 
-      const patientCode = await generatePatientCode();
+      // Ensure unique code even if two requests come at the same time
+      let patientCode;
+      let exists = true;
+      while (exists) {
+        patientCode = await generatePatientCode();
+        exists = await Patient.findOne({ patientCode });
+      }
 
       const patient = new Patient({
         name,
@@ -96,7 +101,7 @@ router.post(
       });
     } catch (err) {
       console.error("Error adding patient:", err);
-      res.status(400).json({ error: err.message });
+      res.status(500).json({ error: "Failed to add patient" });
     }
   }
 );
@@ -105,7 +110,7 @@ router.post(
 router.put(
   "/:id",
   authMiddleware,
-  roleMiddleware([ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE]),
+  requireRole([ROLES.ADMIN, ROLES.DOCTOR, ROLES.NURSE]),
   async (req, res) => {
     try {
       const updatedPatient = await Patient.findByIdAndUpdate(req.params.id, req.body, {
@@ -113,7 +118,9 @@ router.put(
         runValidators: true,
       });
 
-      if (!updatedPatient) return res.status(404).json({ error: "Patient not found" });
+      if (!updatedPatient) {
+        return res.status(404).json({ error: "Patient not found" });
+      }
 
       res.json({
         id: updatedPatient._id,
@@ -135,7 +142,7 @@ router.put(
       });
     } catch (err) {
       console.error("Error updating patient:", err);
-      res.status(400).json({ error: err.message });
+      res.status(400).json({ error: "Failed to update patient" });
     }
   }
 );
@@ -144,16 +151,18 @@ router.put(
 router.delete(
   "/:id",
   authMiddleware,
-  roleMiddleware([ROLES.ADMIN]),
+  requireRole([ROLES.ADMIN]),
   async (req, res) => {
     try {
       const deletedPatient = await Patient.findByIdAndDelete(req.params.id);
-      if (!deletedPatient) return res.status(404).json({ error: "Patient not found" });
+      if (!deletedPatient) {
+        return res.status(404).json({ error: "Patient not found" });
+      }
 
       res.json({ message: "Patient deleted successfully", patientId: deletedPatient._id });
     } catch (err) {
       console.error("Error deleting patient:", err);
-      res.status(500).json({ error: err.message });
+      res.status(500).json({ error: "Failed to delete patient" });
     }
   }
 );

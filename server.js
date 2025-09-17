@@ -27,7 +27,7 @@ async function connectDB() {
     console.log("✅ MongoDB connected");
 
     // Optional: backfill missing Medicine fields
-    const Medicine = require("./models/Medicine");
+    const Medicine = require("./models/Medicine"); // ✅ corrected path
     const medicines = await Medicine.find({});
     let count = 0;
     for (let med of medicines) {
@@ -54,14 +54,15 @@ async function connectDB() {
 connectDB();
 
 // ================= Routes =================
-const authRoutes = require("./routes/authRoutes");
-const patientRoutes = require("./routes/patientRoutes");
-const staffRoutes = require("./routes/staffRoutes");
-const appointmentRoutes = require("./routes/appointmentRoutes");
-const medicineRoutes = require("./routes/medicineRoutes");
-const billRoutes = require("./routes/billRoutes");
-const prescriptionRoutes = require("./routes/prescriptionRoutes");
-const labTestRoutes = require("./routes/labTestRoutes"); // Fixed: proper route file
+const authRoutes = require("./routes/authRoutes");            // ✅ corrected
+const patientRoutes = require("./routes/patientRoutes");      // ✅
+const staffRoutes = require("./routes/staffRoutes");          // ✅
+const appointmentRoutes = require("./routes/appointmentRoutes"); // ✅
+const medicineRoutes = require("./routes/medicineRoutes");    // ✅
+const billRoutes = require("./routes/billRoutes");            // ✅
+const prescriptionRoutes = require("./routes/prescriptionRoutes"); // ✅
+const labTestRoutes = require("./routes/labTestRoutes");      // ✅
+
 
 // ================= Mount routes =================
 app.use("/api/auth", authRoutes);
@@ -71,7 +72,7 @@ app.use("/api/appointments", appointmentRoutes);
 app.use("/api/medicines", medicineRoutes);
 app.use("/api/bills", billRoutes);
 app.use("/api/prescriptions", prescriptionRoutes);
-app.use("/api/lab-tests", labTestRoutes); // Correctly mounted
+app.use("/api/lab-tests", labTestRoutes);
 
 // ================= Default route =================
 app.get("/", (req, res) => {

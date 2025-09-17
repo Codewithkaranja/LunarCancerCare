@@ -1,10 +1,11 @@
-/* ===== Login JS ===== */
+// ===== Login JS =====
+import { BASE_URL } from '../config/config.js';
+import { setAuth, getToken } from './auth.js';
 
-// config
-import { BASE_URL } from './config/config.js';
 const loginURL = `${BASE_URL}/api/auth/login`;
+const loginForm = document.getElementById("loginForm");
 
-document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
+loginForm?.addEventListener("submit", async (e) => {
   e.preventDefault();
 
   const username = document.getElementById("username").value.trim();
@@ -19,38 +20,42 @@ document.getElementById("loginForm")?.addEventListener("submit", async (e) => {
     const res = await fetch(loginURL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify({ username, password }),
     });
 
+    const data = await res.json();
+
     if (!res.ok) {
-      const err = await res.json().catch(() => ({}));
-      throw new Error(err.message || "Login failed");
+      throw new Error(data.error || data.message || "Invalid credentials");
     }
 
-    const data = await res.json();
+    // ✅ If backend forces password change
+    if (data.mustChangePassword) {
+      localStorage.setItem("staffId", data.id);
+      localStorage.setItem("staffCode", data.staffCode);
+      window.location.href = "../html/change-password.html";
+      return;
+    }
+
+    // ✅ Save token + user (ensure correct property name from backend)
     const token = data.token;
+    const user = data.user || data.staff; // fallback if API uses staff instead
+    if (!token || !user) throw new Error("Invalid login response from server");
 
-    if (!token) throw new Error("No token returned from server");
+    setAuth(token, user);
 
-    // save token to localStorage
-    localStorage.setItem("authToken", token);
+    // ✅ Redirect to dashboard
+    window.location.href = "../html/dashboard.html";
 
-    // optional: save user info if returned
-    if (data.user) localStorage.setItem("user", JSON.stringify(data.user));
-
-    // redirect to dashboard
-    window.location.href = "/dashboard.html"; // change if your dashboard has another URL
-
-  } catch (e) {
-    console.error(e);
-    alert(e.message || "Login error");
+  } catch (err) {
+    console.error("Login error:", err);
+    alert(err.message || "Login error");
   }
 });
 
-// optional: auto redirect if already logged in
+// ✅ Auto redirect if already logged in
 window.addEventListener("load", () => {
-  const token = localStorage.getItem("authToken");
-  if (token) {
-    window.location.href = "/dashboard.html";
+  if (getToken()) {
+    window.location.href = "../html/dashboard.html";
   }
 });

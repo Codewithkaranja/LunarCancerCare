@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../css/style.css" />
+  </head>
+  <body>
+    <!-- ====================== Appointments Dashboard ====================== -->
+    <div id="appointmentsSection">
+      <!-- Header + Controls -->
+      <div class="dashboard-header">
+        <h2>Appointments Dashboard</h2>
+        <div class="controls">
+          <input
+            type="text"
+            id="appointmentSearch"
+            placeholder="Search by patient, staff, or date"
+          />
+          <button class="primary-btn" onclick="openModal()">
+            Add Appointment
+          </button>
+        </div>
+      </div>
+
+      <!-- Appointments Table -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Patient</th>
+              <th>Staff</th>
+              <th>Reason</th>
+              <th>Date</th>
+              <th>Time</th>
+              <th>Notes</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="appointmentsTable">
+            <!-- JS will populate rows dynamically -->
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Chart Section -->
+      <div class="appointments-stats">
+        <h3>Appointments Statistics</h3>
+        <canvas id="appointmentsChart"></canvas>
+      </div>
+
+      <!-- Modal: Add/Edit Appointment -->
+      <div id="appointmentModal" class="modal hidden">
+        <div class="modal-content">
+          <span class="close" onclick="closeModal()">&times;</span>
+          <h2 id="modalTitle">Add Appointment</h2>
+          <form id="appointmentForm">
+            <div class="form-grid">
+              <!-- Patient Dropdown -->
+              <div class="input-group">
+                <label for="aPatient">Select Patient</label>
+                <select id="aPatient" required>
+                  <option value="">-- Select Patient --</option>
+                  <!-- JS will populate options dynamically -->
+                </select>
+              </div>
+
+              <!-- Staff Dropdown -->
+              <div class="input-group">
+                <label for="aStaff">Select Staff</label>
+                <select id="aStaff" required>
+                  <option value="">-- Select Staff --</option>
+                  <!-- JS will populate options dynamically -->
+                </select>
+              </div>
+
+              <div class="input-group">
+                <label for="aReason">Reason</label>
+                <input type="text" id="aReason" placeholder="Reason" required />
+              </div>
+
+              <div class="input-group">
+                <label for="aNotes">Notes</label>
+                <textarea
+                  id="aNotes"
+                  placeholder="Write your notes here"
+                ></textarea>
+              </div>
+
+              <div class="input-group">
+                <label for="aDate">Date</label>
+                <input type="date" id="aDate" required />
+              </div>
+
+              <div class="input-group">
+                <label for="aTime">Time</label>
+                <input type="time" id="aTime" required />
+              </div>
+            </div>
+            <button type="submit" class="primary-btn">Save Appointment</button>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <!-- ====================== End Appointments Dashboard ====================== -->
+    <!-- Footer -->
+    <div class="footer">
+      <p>&copy;2025 Lunar Cancer Care. All Rights Reserved</p>
+      <p>
+        Software crafted with <span style="color: red">&#10084;</span> by
+        <a href="tel:+254723562484"> SarahDevs</a>
+      </p>
+    </div>
+    <script type="module" src="../js/appointments.js"></script>
+    <script type="module" src="../js/helpers.js"></script>
+    <script type="module" src="../js/navigation.js"></script>
+    <script type="module" src="../js/modals.js"></script>
+    <script type="module" src="../js/auth.js"></script>
+  </body>
+</html>

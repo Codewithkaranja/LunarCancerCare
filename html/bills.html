@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <!-- ================== BILLING SECTION ================== -->
+    <div id="billingSection" class="hidden">
+      <h2>Billing</h2>
+
+      <!-- Add Bill Form -->
+      <div class="form-container">
+        <h3>Create New Bill</h3>
+        <div class="form-grid">
+          <div class="input-group">
+            <label for="billPatient">Patient</label>
+            <select id="billPatient">
+              <option value="">Select Patient</option>
+              <!-- Populated dynamically -->
+            </select>
+          </div>
+
+          <div class="input-group">
+            <label for="billItemDescription">Item Description</label>
+            <input
+              type="text"
+              id="billItemDescription"
+              placeholder="e.g., Consultation"
+            />
+          </div>
+
+          <div class="input-group">
+            <label for="billItemAmount">Amount</label>
+            <input type="number" id="billItemAmount" placeholder="0" />
+          </div>
+        </div>
+
+        <button onclick="addBillItem()">Add Item</button>
+        <button id="exportBillsBtn">Export CSV</button>
+        <button id="printBillsBtn">Print</button>
+
+        <!-- Bill Items Table -->
+        <div class="table-container">
+          <table>
+            <thead>
+              <tr>
+                <th>Description</th>
+                <th>Amount</th>
+                <th>Actions</th>
+              </tr>
+            </thead>
+            <tbody id="billItemsTable"></tbody>
+          </table>
+        </div>
+
+        <button onclick="createBill()">Submit Bill</button>
+      </div>
+
+      <!-- Search & Filter Controls -->
+      <div class="table-controls">
+        <input
+          type="text"
+          id="billSearch"
+          placeholder="Search by patient or bill ID"
+        />
+        <select id="billStatusFilter" onchange="filterBills()">
+          <option value="">All Statuses</option>
+          <option value="unpaid">Unpaid</option>
+          <option value="paid">Paid</option>
+          <option value="pending">Pending</option>
+        </select>
+      </div>
+
+      <!-- Bills Table -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Bill ID</th>
+              <th>Patient</th>
+              <th>Items</th>
+              <th>Total Amount</th>
+              <th>Status</th>
+              <th>Created By</th>
+              <th>Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="billsTable"></tbody>
+        </table>
+      </div>
+    </div>
+    <!-- Footer -->
+    <div class="footer">
+      <p>&copy;2025 Lunar Cancer Care. All Rights Reserved</p>
+      <p>
+        Software crafted with <span style="color: red">&#10084;</span> by
+        <a href="tel:+254723562484"> SarahDevs</a>
+      </p>
+    </div>
+    <script type="module" src="../js/bills.js"></script>
+    <script type="module" src="../js/helpers.js"></script>
+    <script type="module" src="../js/navigation.js"></script>
+    <script type="module" src="../js/modals.js"></script>
+    <script type="module" src="../js/auth.js"></script>
+  </body>
+</html>

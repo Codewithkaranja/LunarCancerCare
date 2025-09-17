@@ -10,7 +10,7 @@ const ROLES = require("../config/roles");
 // ================== Helper: Generate sequential staff code ==================
 const generateStaffCode = async () => {
   const count = await Staff.countDocuments();
-  return `ST${(count + 1).toString().padStart(4, "0")}`; // ST0001, ST0002, etc.
+  return `ST${(count + 1).toString().padStart(4, "0")}`; // ST0001, ST0002...
 };
 
 // ================== GET all staff ==================
@@ -40,69 +40,72 @@ router.get(
 );
 
 // ================== ADD new staff ==================
-router.post("/", async (req, res) => {
-  try {
-    const { name, username, password, role } = req.body;
-    if (!name || !username || !password || !role)
-      return res.status(400).json({ error: "All fields are required" });
+router.post(
+  "/",
+  async (req, res) => {
+    try {
+      const { name, username, password, role } = req.body;
+      if (!name || !username || !password || !role)
+        return res.status(400).json({ error: "All fields are required" });
 
-    const existing = await Staff.findOne({ username });
-    if (existing) return res.status(409).json({ error: "Username already exists" });
+      const existing = await Staff.findOne({ username });
+      if (existing) return res.status(409).json({ error: "Username already exists" });
 
-    const hashedPassword = await bcrypt.hash(password, 10);
-    const staffCode = await generateStaffCode();
-    const normalizedRole = role.toLowerCase();
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const staffCode = await generateStaffCode();
+      const normalizedRole = role.toLowerCase();
 
-    // Bootstrap first admin
-    const hasAdmin = await Staff.exists({ role: ROLES.ADMIN });
-    if (!hasAdmin && normalizedRole === ROLES.ADMIN.toLowerCase()) {
-      const staff = new Staff({
-        name,
-        username,
-        password: hashedPassword,
-        role: ROLES.ADMIN,
-        staffCode,
-        failedLogins: 0,
-        mustChangePassword: false,
-      });
-      const savedStaff = await staff.save();
-      return res.status(201).json({
-        id: savedStaff._id,
-        staffCode: savedStaff.staffCode,
-        name: savedStaff.name,
-        username: savedStaff.username,
-        role: savedStaff.role,
-        bootstrap: true,
-      });
-    }
-
-    // Require auth + admin for other staff creation
-    return authMiddleware(req, res, async () => {
-      await roleMiddleware([ROLES.ADMIN])(req, res, async () => {
+      // Bootstrap first admin
+      const hasAdmin = await Staff.exists({ role: ROLES.ADMIN });
+      if (!hasAdmin && normalizedRole === ROLES.ADMIN.toLowerCase()) {
         const staff = new Staff({
           name,
           username,
           password: hashedPassword,
-          role: normalizedRole,
+          role: ROLES.ADMIN,
           staffCode,
           failedLogins: 0,
           mustChangePassword: false,
         });
         const savedStaff = await staff.save();
-        res.status(201).json({
+        return res.status(201).json({
           id: savedStaff._id,
           staffCode: savedStaff.staffCode,
           name: savedStaff.name,
           username: savedStaff.username,
           role: savedStaff.role,
+          bootstrap: true,
+        });
+      }
+
+      // ✅ Require auth + admin for creating other staff
+      return authMiddleware(req, res, async () => {
+        return roleMiddleware([ROLES.ADMIN])(req, res, async () => {
+          const staff = new Staff({
+            name,
+            username,
+            password: hashedPassword,
+            role: normalizedRole,
+            staffCode,
+            failedLogins: 0,
+            mustChangePassword: false,
+          });
+          const savedStaff = await staff.save();
+          res.status(201).json({
+            id: savedStaff._id,
+            staffCode: savedStaff.staffCode,
+            name: savedStaff.name,
+            username: savedStaff.username,
+            role: savedStaff.role,
+          });
         });
       });
-    });
-  } catch (err) {
-    console.error("Error adding staff:", err);
-    res.status(500).json({ error: "Internal server error" });
+    } catch (err) {
+      console.error("Error adding staff:", err);
+      res.status(500).json({ error: "Internal server error" });
+    }
   }
-});
+);
 
 // ================== UPDATE staff ==================
 router.put(

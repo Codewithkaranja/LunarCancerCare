@@ -112,6 +112,7 @@ router.post(
 
       const saved = await prescription.save();
 
+      // Link prescription to patient
       patient.prescriptions = patient.prescriptions || [];
       patient.prescriptions.push(saved._id);
       await patient.save();
@@ -152,11 +153,10 @@ router.put(
       const updateData = { items, notes, status };
       if (status === "Dispensed") updateData.dispensedDate = new Date();
 
-      const updated = await Prescription.findByIdAndUpdate(
-        req.params.id,
-        updateData,
-        { new: true, runValidators: true }
-      )
+      const updated = await Prescription.findByIdAndUpdate(req.params.id, updateData, {
+        new: true,
+        runValidators: true,
+      })
         .populate("patientId", "name patientCode")
         .populate("prescribedBy", "name staffCode role");
 

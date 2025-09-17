@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="/css/style.css" />
+  </head>
+  <body>
+    <!-- Inventory Section -->
+    <div id="inventorySection" class="hidden">
+      <div class="form-container">
+        <h2>Medicine Inventory</h2>
+        <div class="form-grid">
+          <div class="input-group">
+            <label for="medName">Name</label>
+            <input type="text" id="medName" placeholder="Medicine name" />
+          </div>
+          <div class="input-group">
+            <label for="medBatch">Batch No.</label>
+            <input type="text" id="medBatch" placeholder="Batch number" />
+          </div>
+          <div class="input-group">
+            <label for="medQuantity">Quantity</label>
+            <input type="number" id="medQuantity" placeholder="Quantity" />
+          </div>
+          <div class="input-group">
+            <label for="medUnit">Unit</label>
+            <input type="text" id="medUnit" placeholder="e.g. tablets" />
+          </div>
+          <div class="input-group">
+            <label for="medPrice">Price per unit</label>
+            <input type="number" id="medPrice" placeholder="Price" />
+          </div>
+          <div class="input-group">
+            <label for="medExpiry">Expiry Date</label>
+            <input type="date" id="medExpiry" />
+          </div>
+        </div>
+        <button onclick="addOrUpdateMedicine()">Add / Update Medicine</button>
+      </div>
+
+      <!-- Search & Sort Controls -->
+      <div class="table-controls">
+        <input
+          type="text"
+          id="inventorySearch"
+          placeholder="Search by name, batch or unit"
+        />
+        <div class="sort-buttons">
+          <label>Sort by:</label>
+          <button onclick="sortInventory('name')">Name</button>
+          <button onclick="sortInventory('quantity')">Qty</button>
+          <button onclick="sortInventory('expiryDate')">Expiry</button>
+        </div>
+      </div>
+
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Batch</th>
+              <th>Qty</th>
+              <th>Unit</th>
+              <th>Price</th>
+              <th>Expiry</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="inventoryTableBody"></tbody>
+        </table>
+      </div>
+
+      <!-- Stock Chart Section -->
+      <div class="chart-container">
+        <canvas id="stockChart"></canvas>
+      </div>
+    </div>
+    <!-- Footer -->
+    <div class="footer">
+      <p>&copy;2025 Lunar Cancer Care. All Rights Reserved</p>
+      <p>
+        Software crafted with <span style="color: red">&#10084;</span> by
+        <a href="tel:+254723562484"> SarahDevs</a>
+      </p>
+    </div>
+    <script type="module" src="../js/inventory.js"></script>
+    <script type="module" src="../js/helpers.js"></script>
+    <script type="module" src="../js/navigation.js"></script>
+    <script type="module" src="../js/modals.js"></script>
+    <script type="module" src="../js/auth.js"></script>
+  </body>
+</html>

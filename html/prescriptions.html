@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"
+    />
+    <link rel="stylesheet" href="../css/style.css" />
+  </head>
+  <body>
+    <!-- ================== PRESCRIPTIONS SECTION ================== -->
+    <div id="prescriptionsSection" class="hidden">
+      <!-- Header + Controls -->
+      <div class="dashboard-header">
+        <h2>Prescriptions</h2>
+        <div class="controls">
+          <input
+            type="text"
+            id="prescriptionSearch"
+            placeholder="Search by patient, medicine, or doctor"
+          />
+          <button class="primary-btn" onclick="openPrescriptionModal()">
+            Add Prescription
+          </button>
+        </div>
+      </div>
+
+      <!-- Prescriptions Table -->
+      <div class="table-container">
+        <table>
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Prescription Code</th>
+              <th>Patient</th>
+              <th>Medicine & Dosage</th>
+              <th>Prescribed By</th>
+              <th>Status</th>
+              <th>Issued Date</th>
+              <th>Dispensed Date</th>
+              <th>Actions</th>
+            </tr>
+          </thead>
+          <tbody id="prescriptionsTable"></tbody>
+        </table>
+      </div>
+
+      <!-- Modal: Add/Edit Prescription -->
+      <div id="prescriptionModal" class="modal hidden">
+        <div class="modal-content">
+          <span class="close" onclick="closePrescriptionModal()">&times;</span>
+          <h2 id="prescriptionModalTitle">Add Prescription</h2>
+          <form id="prescriptionForm">
+            <div class="form-grid">
+              <!-- Patient Dropdown -->
+              <div class="input-group">
+                <label for="pPatient">Select Patient</label>
+                <select id="pPatient" required>
+                  <option value="">-- Select Patient --</option>
+                  <!-- JS will populate dynamically -->
+                </select>
+              </div>
+
+              <!-- Prescription Items -->
+              <div id="prescriptionItemsContainer">
+                <h4>Prescription Items</h4>
+                <div class="prescription-item">
+                  <input
+                    type="text"
+                    class="pMedicine"
+                    placeholder="Medicine Name"
+                    required
+                  />
+                  <input
+                    type="text"
+                    class="pDosage"
+                    placeholder="Dosage"
+                    required
+                  />
+                  <input
+                    type="text"
+                    class="pDuration"
+                    placeholder="Duration"
+                    required
+                  />
+                  <button
+                    type="button"
+                    class="remove-item-btn"
+                    onclick="removePrescriptionItem(this)"
+                  >
+                    Remove
+                  </button>
+                </div>
+              </div>
+              <button
+                type="button"
+                class="secondary-btn"
+                onclick="addPrescriptionItem()"
+              >
+                Add Another Item
+              </button>
+
+              <!-- Notes -->
+              <div class="input-group">
+                <label for="pNotes">Notes</label>
+                <textarea id="pNotes" placeholder="Doctor's notes"></textarea>
+              </div>
+            </div>
+
+            <button type="submit" class="primary-btn">Save Prescription</button>
+          </form>
+        </div>
+      </div>
+    </div>
+    <!-- Footer -->
+    <div class="footer">
+      <p>&copy;2025 Lunar Cancer Care. All Rights Reserved</p>
+      <p>
+        Software crafted with <span style="color: red">&#10084;</span> by
+        <a href="tel:+254723562484"> SarahDevs</a>
+      </p>
+    </div>
+    <script type="module" src="../js/prescriptions.js"></script>
+    <script type="module" src="../js/helpers.js"></script>
+    <script type="module" src="../js/navigation.js"></script>
+    <script type="module" src="../js/modals.js"></script>
+    <script type="module" src="../js/auth.js"></script>
+  </body>
+</html>
