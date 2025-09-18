@@ -36,7 +36,7 @@ export function getUser() {
 export function logout() {
   localStorage.removeItem(TOKEN_KEY);
   localStorage.removeItem(USER_KEY);
-  window.location.href = "../html/login.html"; // redirect to login page
+  window.location.href = "../html/index.html"; // redirect to login page
 }
 
 /**
@@ -81,7 +81,7 @@ export async function apiFetch(url, options = {}) {
 export function requireAuth() {
   const token = getToken();
   if (!token) {
-    window.location.href = "../html/login.html";
+    window.location.href = "../html/index.html";
   }
 }
 

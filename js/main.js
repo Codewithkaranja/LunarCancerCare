@@ -24,7 +24,7 @@ const currentUser = JSON.parse(localStorage.getItem("user")) || { role: "guest" 
 // ================= AUTH CHECK =================
 if (!getToken()) {
   // Redirect to login if no token
-  window.location.href = "../html/login.html";
+  window.location.href = "../html/index.html";
 }
 
 // ================= FETCH ALL =================

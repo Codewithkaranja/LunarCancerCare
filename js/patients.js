@@ -56,7 +56,7 @@ export async function apiFetch(url, options = {}) {
       localStorage.removeItem("token");
       localStorage.removeItem("authToken");
       localStorage.removeItem("user");
-      window.location.href = "login.html";
+      window.location.href = "index.html";
     }
     throw new Error(data.error || "API Error");
   }
